@@ -1,0 +1,51 @@
+rules_version = '2';
+service cloud.firestore {
+  function isSignedIn() {
+    return request.auth != null;
+  }
+
+  function isSelf(playerId) {
+    return isSignedIn() && request.auth.uid == playerId;
+  }
+
+  match /databases/{database}/documents {
+    match /profiles/{playerId} {
+      allow read, write: if isSelf(playerId);
+    }
+
+    match /leaderboards/{mode}/entries/{playerId} {
+      allow read: if true;
+      allow write: if isSelf(playerId);
+    }
+
+    match /invites/{inviteId} {
+      allow read, update: if isSignedIn() &&
+        (
+          request.resource.data.toPlayerId == request.auth.uid ||
+          resource.data.toPlayerId == request.auth.uid ||
+          resource.data.fromPlayerId == request.auth.uid
+        );
+      allow create: if isSignedIn() &&
+        request.resource.data.fromPlayerId == request.auth.uid;
+    }
+
+    match /games/{gameId} {
+      allow read, write: if isSignedIn();
+
+      match /players/{playerId} {
+        allow read: if isSignedIn();
+        allow write: if isSignedIn();
+      }
+
+      match /rounds/{roundId} {
+        allow read, write: if isSignedIn();
+
+        match /answers/{answerId} {
+          allow create: if isSignedIn() &&
+            request.resource.data.playerId == request.auth.uid;
+          allow read: if isSignedIn();
+        }
+      }
+    }
+  }
+}
