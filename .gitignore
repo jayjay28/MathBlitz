@@ -6,3 +6,4 @@ functions/venv/
 **/DerivedData/
 
 .gcloud/
+__pycache__/
