@@ -13,6 +13,7 @@ def resolvemultiplayeranswer(event: firestore_fn.Event[firestore_fn.Change]) -> 
     """A Cloud Function that resolves a multiplayer answer in real-time."""
 
     db = firestore.client()
+    print("resolveMultiplayerAnswer invoked", event.params)
     
     game_id = event.params.get("gameId")
     round_id = event.params.get("roundId")
