@@ -54,7 +54,7 @@ struct MultiplayerRoundPlayView: View {
                                 .foregroundColor(.white)
                                 .padding(.horizontal, 14)
                                 .padding(.vertical, 8)
-                                .background(Color.white.opacity(0.2))
+                                .background(Color.red.opacity(0.9))
                                 .clipShape(Capsule())
                         }
                         .padding(.leading, 16)
