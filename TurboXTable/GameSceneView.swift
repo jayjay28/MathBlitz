@@ -143,12 +143,12 @@ struct GameSceneView: View {
                                 isMenuOpen = false
                             }
                         }
-                    SideMenuView(onLeaderboard: {
-                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                            isMenuOpen = false
-                        }
-                        onLeaderboardTapped()
-                    }, onSettings: {
+                SideMenuView(isEndGameEnabled: viewModel.isGameActive, onLeaderboard: {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                        isMenuOpen = false
+                    }
+                    onLeaderboardTapped()
+                }, onSettings: {
                         withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                             isMenuOpen = false
                         }
@@ -158,12 +158,12 @@ struct GameSceneView: View {
                             isMenuOpen = false
                         }
                         onMultiplayerTapped()
-                    }, onEndGame: {
-                        withAnimation {
-                            isMenuOpen = false
-                            viewModel.quitGame()
-                        }
-                    })
+                }, onEndGame: {
+                    withAnimation {
+                        isMenuOpen = false
+                        viewModel.quitGame()
+                    }
+                })
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .transition(.move(edge: .leading).combined(with: .opacity))
                 }
@@ -533,6 +533,7 @@ struct AnswerShakeModifier: ViewModifier {
 }
 
 struct SideMenuView: View {
+    let isEndGameEnabled: Bool
     let onLeaderboard: () -> Void
     let onSettings: () -> Void
     let onMultiplayer: () -> Void
@@ -563,6 +564,7 @@ struct SideMenuView: View {
                 SideMenuButton(icon: "xmark.circle.fill",
                                title: "End Game",
                                subtitle: "Return to main menu",
+                               isEnabled: isEndGameEnabled,
                                action: onEndGame)
                 
                 Spacer()
@@ -594,6 +596,7 @@ private struct SideMenuButton: View {
     let title: String
     let subtitle: String
     let action: () -> Void
+    var isEnabled: Bool = true
     
     var body: some View {
         Button(action: action) {
@@ -619,7 +622,9 @@ private struct SideMenuButton: View {
             .padding(.vertical, 12)
             .padding(.horizontal, 12)
             .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .opacity(isEnabled ? 1 : 0.35)
         }
+        .disabled(!isEnabled)
         .buttonStyle(.plain)
     }
 }
