@@ -8,40 +8,43 @@
 import SwiftUI
 
 struct MultiplayerScoreCardView: View {
+    enum Style {
+        case large
+        case compact
+        
+        var scoreSize: CGFloat { self == .large ? 40 : 26 }
+        var emojiSize: CGFloat { self == .large ? 44 : 30 }
+        var nameSize: CGFloat { self == .large ? 16 : 13 }
+        var spacing: CGFloat { self == .large ? 10 : 6 }
+    }
+    
     let emoji: String
-    let color: Color
     let displayName: String
     let score: Int
     let rank: Int
-    let isWinner: Bool
+    var caption: String?
+    var isWinner: Bool = false
+    var style: Style = .large
     
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: style.spacing) {
             Text("\(score)")
-                .font(.bobaland(size: 40))
+                .font(.bobaland(size: style.scoreSize))
                 .foregroundColor(isWinner ? .yellow : .white)
-            
-            EmojitarBadge(
-                emoji: emoji,
-                color: color,
-                size: .md,
-                ring: isWinner,
-                glow: isWinner,
-                highlight: isWinner
-            )
-            .frame(width: 72, height: 72)
-            
+            Text(emoji)
+                .font(.system(size: style.emojiSize))
+                .shadow(color: isWinner ? .yellow.opacity(0.3) : .clear, radius: 6, x: 0, y: 2)
             Text(displayName)
-                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .font(.system(size: style.nameSize, weight: .bold, design: .rounded))
                 .foregroundColor(.white)
                 .lineLimit(1)
-                .minimumScaleFactor(0.6)
+                .minimumScaleFactor(0.5)
             
-            Text("#\(rank)")
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
+            Text(caption ?? "#\(rank)")
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
                 .foregroundColor(.white.opacity(0.7))
         }
-        .frame(minWidth: 90)
+        .frame(minWidth: style == .large ? 90 : 70)
     }
 }
 
@@ -50,27 +53,27 @@ struct MultiplayerScoreCardView_Previews: PreviewProvider {
         HStack(spacing: 20) {
             MultiplayerScoreCardView(
                 emoji: "⚡️",
-                color: .yellow,
                 displayName: "Clyon",
                 score: 18,
                 rank: 1,
-                isWinner: true
+                caption: "#1",
+                isWinner: true,
+                style: .large
             )
             MultiplayerScoreCardView(
                 emoji: "🦖",
-                color: .green,
                 displayName: "Ada",
                 score: 12,
                 rank: 2,
-                isWinner: false
+                caption: "Correct",
+                style: .compact
             )
             MultiplayerScoreCardView(
                 emoji: "🎯",
-                color: .purple,
                 displayName: "Max",
                 score: 8,
                 rank: 3,
-                isWinner: false
+                style: .compact
             )
         }
         .padding()

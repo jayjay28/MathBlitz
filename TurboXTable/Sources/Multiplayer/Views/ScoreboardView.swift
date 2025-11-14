@@ -26,11 +26,12 @@ struct ScoreboardView: View {
                         ForEach(Array(sortedPlayers.enumerated()), id: \.1.id) { index, player in
                             MultiplayerScoreCardView(
                                 emoji: player.profile.emojitar.emoji,
-                                color: player.profile.emojitar.color,
                                 displayName: player.profile.displayName,
                                 score: player.score,
                                 rank: index + 1,
-                                isWinner: player.id == winnerId
+                                caption: "#\(index + 1)",
+                                isWinner: player.id == winnerId,
+                                style: .large
                             )
                         }
                     }
