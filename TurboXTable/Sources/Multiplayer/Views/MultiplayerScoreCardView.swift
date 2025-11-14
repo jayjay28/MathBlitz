@@ -22,7 +22,6 @@ struct MultiplayerScoreCardView: View {
     let displayName: String
     let score: Int
     let rank: Int
-    var caption: String?
     var isWinner: Bool = false
     var style: Style = .large
     
@@ -41,10 +40,6 @@ struct MultiplayerScoreCardView: View {
                 .foregroundColor(.white)
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
-
-            Text(caption ?? "#\(rank)")
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
-                .foregroundColor(.white.opacity(0.7))
         }
         .frame(minWidth: style == .large ? 90 : 70)
     }
@@ -58,7 +53,6 @@ struct MultiplayerScoreCardView_Previews: PreviewProvider {
                 displayName: "Clyon",
                 score: 18,
                 rank: 1,
-                caption: "#1",
                 isWinner: true,
                 style: .large
             )
@@ -67,7 +61,6 @@ struct MultiplayerScoreCardView_Previews: PreviewProvider {
                 displayName: "Ada",
                 score: 12,
                 rank: 2,
-                caption: "Correct",
                 style: .compact
             )
             MultiplayerScoreCardView(

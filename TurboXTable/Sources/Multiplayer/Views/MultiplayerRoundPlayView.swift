@@ -37,15 +37,28 @@ struct MultiplayerRoundPlayView: View {
             ZStack(alignment: .topLeading) {
                 VStack(spacing: 10) {
                     Spacer()
+                    countdownClock
                     questionSection(for: geo.size)
                     VStack {
-                        countdownClock
+                       
                         Spacer()
                         PlayerDock(players: players)
                             .padding(.horizontal, 16)
                             .padding(.bottom, 16)
 
                         numpadView
+                        Spacer()
+                        Button(action: onBack) {
+                            Label("Leave", systemImage: "door.left.hand.open")
+                                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 8)
+                                .background(Color.white.opacity(0.2))
+                                .clipShape(Capsule())
+                        }
+                        .padding(.leading, 16)
+                        .padding(.top, geo.safeAreaInsets.top + 8)
                     }
                     .padding(.bottom, geo.safeAreaInsets.bottom + 24)
                 }
@@ -55,17 +68,7 @@ struct MultiplayerRoundPlayView: View {
                 .background(animatedBackgroundColor)
                 .offset(x: screenShake)
                 
-                Button(action: onBack) {
-                    Label("Leave", systemImage: "chevron.left")
-                        .font(.system(size: 15, weight: .semibold, design: .rounded))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .background(Color.white.opacity(0.2))
-                        .clipShape(Capsule())
-                }
-                .padding(.leading, 16)
-                .padding(.top, geo.safeAreaInsets.top + 8)
+                
             }
         }
         .onChange(of: round.questionIndex) { _ in
@@ -111,7 +114,7 @@ struct MultiplayerRoundPlayView: View {
         let answerSize = max(72, shortestSide * 0.16)
         let answerText = userAnswer.isEmpty ? "?" : userAnswer
         
-        return HStack(alignment: .bottom, spacing: 16) {
+        return VStack(spacing: 16) {
             Text("\(round.problem.a) × \(round.problem.b) =")
                 .font(.bobaland(size: promptSize))
                 .foregroundColor(.white)
@@ -120,7 +123,7 @@ struct MultiplayerRoundPlayView: View {
             
             Text(answerText)
                 .font(.bobaland(size: answerSize))
-                .foregroundColor(isLocked ? .gray : .cyan)
+                .foregroundColor(isLocked ? .gray : .white)
                 .minimumScaleFactor(0.5)
                 .lineLimit(1)
                 .offset(x: screenShake)

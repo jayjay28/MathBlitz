@@ -564,8 +564,7 @@ struct SideMenuView: View {
                 SideMenuButton(icon: "xmark.circle.fill",
                                title: "End Game",
                                subtitle: "Return to main menu",
-                               isEnabled: isEndGameEnabled,
-                               action: onEndGame)
+                               action: onEndGame, isEnabled: isEndGameEnabled)
                 
                 Spacer()
                 

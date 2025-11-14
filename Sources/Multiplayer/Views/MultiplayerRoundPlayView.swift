@@ -56,7 +56,7 @@ struct MultiplayerRoundPlayView: View {
                 .offset(x: screenShake)
                 
                 Button(action: onBack) {
-                    Label("Leave", systemImage: "chevron.left")
+                    Label("Leave", systemImage: "door.left.hand.open")
                         .font(.system(size: 15, weight: .semibold, design: .rounded))
                         .foregroundColor(.white)
                         .padding(.horizontal, 14)
