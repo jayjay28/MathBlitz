@@ -38,12 +38,15 @@ service cloud.firestore {
       }
 
       match /rounds/{roundId} {
-        allow read, write: if isSignedIn();
+        allow read: if isSignedIn();
+        allow delete: if isSignedIn();
+        allow create, update: if isSignedIn();
 
         match /answers/{answerId} {
           allow create: if isSignedIn() &&
             request.resource.data.playerId == request.auth.uid;
           allow read: if isSignedIn();
+          allow delete: if isSignedIn();
         }
       }
     }
