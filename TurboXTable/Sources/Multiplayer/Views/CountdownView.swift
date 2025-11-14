@@ -42,25 +42,6 @@ struct CountdownView: View {
                 }
             }
             .frame(height: 280)
-            
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 18) {
-                    ForEach(players) { player in
-                        VStack(spacing: 6) {
-                            EmojitarBadge(
-                                emoji: player.profile.emojitar.emoji,
-                                color: player.profile.emojitar.color,
-                                size: .md
-                            )
-                            Text(player.profile.displayName)
-                                .font(.system(size: 14, weight: .semibold, design: .rounded))
-                                .foregroundColor(.white.opacity(0.85))
-                                .lineLimit(1)
-                        }
-                        .frame(width: 72)
-                    }
-                }
-            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
@@ -83,3 +64,37 @@ struct CountdownView: View {
         )
     }
 }
+
+#if DEBUG
+struct CountdownView_Previews: PreviewProvider {
+    static var previews: some View {
+        CountdownView(players: samplePlayers, secondsRemaining: 3)
+            .previewDisplayName("Multiplayer Countdown")
+    }
+    
+    private static var samplePlayers: [MultiplayerPlayerState] {
+        let emojis = Emojitar.emojiPalette
+        let colors = Emojitar.colorPalette
+        return (0..<6).map { index in
+            let profile = PlayerProfile.fresh(
+                id: "player-\(index)",
+                displayName: "Player \(index + 1)",
+                emojitar: Emojitar(
+                    emoji: emojis[index % emojis.count],
+                    colorHex: colors[index % colors.count]
+                ),
+                mode: .kids
+            )
+            return MultiplayerPlayerState(
+                profile: profile,
+                isReady: index.isMultiple(of: 2),
+                score: index * 5,
+                latestAnswer: nil,
+                isCorrect: false,
+                isFirstCorrect: false,
+                submittedAt: nil
+            )
+        }
+    }
+}
+#endif
