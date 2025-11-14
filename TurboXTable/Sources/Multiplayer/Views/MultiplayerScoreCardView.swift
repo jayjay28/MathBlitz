@@ -11,9 +11,8 @@ struct MultiplayerScoreCardView: View {
     enum Style {
         case large
         case compact
-        
-        var scoreSize: CGFloat { self == .large ? 40 : 26 }
-        var emojiSize: CGFloat { self == .large ? 44 : 30 }
+        var scoreSize: CGFloat { self == .large ? 25 : 20 }
+        var emojiSize: CGFloat { self == .large ? 25 : 20 }
         var nameSize: CGFloat { self == .large ? 16 : 13 }
         var spacing: CGFloat { self == .large ? 10 : 6 }
     }
@@ -27,19 +26,23 @@ struct MultiplayerScoreCardView: View {
     
     var body: some View {
         VStack(spacing: style.spacing) {
+           
             Text("\(score)")
                 .font(.bobaland(size: style.scoreSize))
                 .foregroundColor(isWinner ? .yellow : .white)
             
-            Text(emoji)
-                .font(.system(size: style.emojiSize))
-                .shadow(color: isWinner ? .yellow.opacity(0.3) : .clear, radius: 6, x: 0, y: 2)
+            HStack {
+                Text(emoji)
+                    .font(.system(size: style.emojiSize))
+                    .shadow(color: isWinner ? .yellow.opacity(0.3) : .clear, radius: 6, x: 0, y: 2)
+                Text(displayName)
+                    .font(.system(size: style.nameSize, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+            }
+           
             
-            Text(displayName)
-                .font(.system(size: style.nameSize, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
-                .lineLimit(1)
-                .minimumScaleFactor(0.5)
         }
         .frame(minWidth: style == .large ? 90 : 70)
     }

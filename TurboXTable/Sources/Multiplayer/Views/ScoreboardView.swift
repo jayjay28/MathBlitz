@@ -29,7 +29,6 @@ struct ScoreboardView: View {
                                 displayName: player.profile.displayName,
                                 score: player.score,
                                 rank: index + 1,
-                                caption: "#\(index + 1)",
                                 isWinner: player.id == winnerId,
                                 style: .large
                             )
