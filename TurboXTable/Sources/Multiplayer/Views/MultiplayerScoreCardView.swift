@@ -14,7 +14,7 @@ struct MultiplayerScoreCardView: View {
         var scoreSize: CGFloat { self == .large ? 25 : 20 }
         var emojiSize: CGFloat { self == .large ? 25 : 20 }
         var nameSize: CGFloat { self == .large ? 16 : 13 }
-        var spacing: CGFloat { self == .large ? 10 : 6 }
+        var spacing: CGFloat { self == .large ? 8 : 4 }
     }
     
     let emoji: String
@@ -26,7 +26,6 @@ struct MultiplayerScoreCardView: View {
     
     var body: some View {
         VStack(spacing: style.spacing) {
-           
             Text("\(score)")
                 .font(.bobaland(size: style.scoreSize))
                 .foregroundColor(isWinner ? .yellow : .white)
@@ -41,8 +40,6 @@ struct MultiplayerScoreCardView: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.5)
             }
-           
-            
         }
         .frame(minWidth: style == .large ? 90 : 70)
     }
