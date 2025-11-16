@@ -45,6 +45,15 @@ final class SoundEffectPlayer {
         }
     }
     
+    func playGlassSound() {
+        queue.async { [weak self] in
+            guard let self else { return }
+            self.ensureAudioSession()
+            FlowLogger.trace("Playing glass_005 sound")
+            self.playSound(named: "glass_005")
+        }
+    }
+    
     private func playSound(named name: String) {
         if let player = players[name] {
             player.currentTime = 0
