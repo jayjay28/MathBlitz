@@ -140,10 +140,7 @@ struct GameSceneView: View {
                                              onDismiss: viewModel.dismissCelebration)
                 }
 
-                if viewModel.showSuccessFlash {
-                    SuccessFlashView()
-                        .transition(.scale.combined(with: .opacity))
-                }
+
 
                 if viewModel.showPlacementToast, let placement = viewModel.latestPlacement {
                     PlacementToastView(placement: placement)
@@ -633,35 +630,7 @@ private struct SideMenuButton: View {
     }
 }
 
-struct SuccessFlashView: View {
-    @State private var animate = false
-    
-    var body: some View {
-        ZStack {
-            Color.clear
-            
-            ZStack {
-                RoundedRectangle(cornerRadius: 20) // Subtle background
-                    .fill(Color.white.opacity(0.2))
-                    .frame(width: animate ? 160 : 130, height: animate ? 160 : 130) // Slightly larger than emoji
-                
-                Text("👍")
-                    .font(.system(size: animate ? 96 : 76))
-                    .shadow(color: .black.opacity(0.25), radius: 6, x: 0, y: 4)
-            }
-            .padding(36)
-            .padding(24)
-            // Removed background and clipShape
-            .scaleEffect(animate ? 1 : 0.7)
-            .onAppear {
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.5)) {
-                    animate = true
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}
+
 
 private struct PostGameView: View {
     let score: Int
