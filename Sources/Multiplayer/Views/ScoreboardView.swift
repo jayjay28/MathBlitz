@@ -10,6 +10,9 @@ import SwiftUI
 struct ScoreboardView: View {
     var players: [MultiplayerPlayerState]
     var winnerId: String?
+    var isHost: Bool = false
+    var isReturningToLobby: Bool = false
+    var onReturnToLobby: () -> Void = {}
     var onClose: () -> Void
     
     var body: some View {
@@ -39,6 +42,8 @@ struct ScoreboardView: View {
                 }
             }
             
+            actionSection
+            
             Spacer()
         }
         .padding(24)
@@ -51,6 +56,37 @@ struct ScoreboardView: View {
     
     private var sortedPlayers: [MultiplayerPlayerState] {
         players.sorted { $0.score > $1.score }
+    }
+    
+    private var actionSection: some View {
+        VStack(spacing: 12) {
+            if isHost {
+                Button(action: onReturnToLobby) {
+                    HStack {
+                        if isReturningToLobby {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        }
+                        Text(isReturningToLobby ? "Returning to Lobby…" : "Return to Lobby")
+                            .font(.system(size: 18, weight: .bold, design: .rounded))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.white.opacity(0.2))
+                    .cornerRadius(16)
+                }
+                .disabled(isReturningToLobby)
+                
+                Text("Send everyone back to the ready room to decide if you want a rematch.")
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundColor(.white.opacity(0.8))
+            } else {
+                Text("Waiting for the host to return to the lobby or end the session.")
+                    .font(.system(size: 16, weight: .medium, design: .rounded))
+                    .foregroundColor(.white.opacity(0.8))
+                    .multilineTextAlignment(.center)
+            }
+        }
     }
     
     private var header: some View {

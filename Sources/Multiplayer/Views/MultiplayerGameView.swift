@@ -14,6 +14,7 @@ struct MultiplayerGameView: View {
     @StateObject private var multiplayerGameViewModel = GameViewModel()
     @State private var roundTimerTask: Task<Void, Never>?
     @State private var didLogResultForRound = false
+    @State private var isReturningToLobby = false
     private let roundDuration: TimeInterval = 60
     @State private var timerTick = Date()
     private let uiTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
@@ -71,6 +72,18 @@ struct MultiplayerGameView: View {
                 ScoreboardView(
                     players: syncService.game.players,
                     winnerId: syncService.game.winnerId,
+                    isHost: isHost,
+                    isReturningToLobby: isReturningToLobby,
+                    onReturnToLobby: {
+                        guard isHost, !isReturningToLobby else { return }
+                        isReturningToLobby = true
+                        Task {
+                            await syncService.returnToLobby()
+                            await MainActor.run {
+                                isReturningToLobby = false
+                            }
+                        }
+                    },
                     onClose: {
                         syncService.detach()
                         onExit()

@@ -84,15 +84,19 @@ struct GameSceneView: View {
                     Spacer(minLength: 20)
                     
                     VStack(spacing: 12) {
-                        countdownClock
+                        
                         livesSection
-                        ScoreAndBestView(currentScore: viewModel.score, highScore: viewModel.highScore, sizeClass: sizeClass)
-                            .offset(x: scoreShakeOffset)
-                            .onChange(of: viewModel.triggerHighScoreShake) { trigger in
-                                if trigger {
-                                    shakeScoreView()
+                        HStack {
+                            countdownClock
+                            ScoreAndBestView(currentScore: viewModel.score, highScore: viewModel.highScore, sizeClass: sizeClass)
+                                .offset(x: scoreShakeOffset)
+                                .onChange(of: viewModel.triggerHighScoreShake) { trigger in
+                                    if trigger {
+                                        shakeScoreView()
+                                    }
                                 }
-                            }
+                        }
+                        
                         numpadView
                         
                         if shouldShowSkillLabEndButton {

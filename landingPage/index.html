@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Turbo Times Table — Race Through Multiplication</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="noise-layer" aria-hidden="true"></div>
+  <header class="hero" id="home">
+    <nav class="nav">
+      <div class="logo">Turbo Times Table</div>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#modes">Game Modes</a>
+        <a href="#parents">Parents</a>
+      </div>
+      <a class="pill pill-outline" href="#download">Download</a>
+    </nav>
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow">5-second math duels</p>
+        <h1>Multiplication drills reimagined as a neon speedway.</h1>
+        <p class="lead">Turbo Times Table is a high-energy iOS experience that blends arcade tension with thoughtful math practice. Kids race a glowing car, beat the clock, and share the podium with friends worldwide.</p>
+        <div class="actions">
+          <a class="pill pill-solid" href="#download">Download for iOS</a>
+          <button class="pill pill-ghost" type="button">Watch gameplay</button>
+        </div>
+        <div class="stats">
+          <div>
+            <span class="stat-value">5s</span>
+            <span class="stat-label">per sprint</span>
+          </div>
+          <div>
+            <span class="stat-value">120k</span>
+            <span class="stat-label">rounds completed</span>
+          </div>
+          <div>
+            <span class="stat-value">2</span>
+            <span class="stat-label">skill tracks</span>
+          </div>
+        </div>
+      </div>
+      <div class="hero-ui">
+        <div class="device-shell">
+          <div class="device-track">
+            <div class="track">
+              <div class="track-lane"></div>
+              <div class="finish-line">
+                <span></span><span></span><span></span><span></span>
+              </div>
+              <div class="car" aria-hidden="true"></div>
+            </div>
+            <div class="countdown">
+              <div class="countdown-ring">
+                <div class="countdown-progress"></div>
+              </div>
+              <div>
+                <p class="countdown-label">Timer</p>
+                <p class="countdown-value">05.00</p>
+              </div>
+            </div>
+            <div class="equation">
+              <div class="prompt">6 × 7 = ?</div>
+              <div class="answer">42</div>
+            </div>
+            <div class="numpad">
+              <button>1</button><button>2</button><button>3</button>
+              <button>4</button><button>5</button><button>6</button>
+              <button>7</button><button>8</button><button>9</button>
+              <button>C</button><button>0</button><button>⌫</button>
+            </div>
+          </div>
+          <div class="device-glow"></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section id="features" class="section features">
+      <div class="section-header">
+        <p class="eyebrow">Designed like the game</p>
+        <h2>Every screen borrows from the neon SwiftUI interface.</h2>
+      </div>
+      <div class="feature-grid">
+        <article>
+          <h3>Dynamic timer energy</h3>
+          <p>The landing page gradient matches the in-app background that shifts from electric blue to magenta as the 5-second sprint winds down.</p>
+        </article>
+        <article>
+          <h3>Arcade typography</h3>
+          <p>Rounded, heavy fonts echo the bold numbers used for equations and leaderboards inside the app.</p>
+        </article>
+        <article>
+          <h3>Glowing controls</h3>
+          <p>Glossy buttons mirror the oversized numpad, so visitors immediately recognize gameplay from the hero preview.</p>
+        </article>
+        <article>
+          <h3>Space to breathe</h3>
+          <p>Minimal layouts keep focus on the key beat: solve before the car hits the finish line.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section timeline">
+      <div class="timeline-card">
+        <h2>Race-ready flow in three beats.</h2>
+        <ol>
+          <li>
+            <span class="step-number">01</span>
+            <div>
+              <h3>Launch and select your lane</h3>
+              <p>Kids or Adults mode sets number ranges, pace, and rewards before the light turns green.</p>
+            </div>
+          </li>
+          <li>
+            <span class="step-number">02</span>
+            <div>
+              <h3>Fire off 5-second sprints</h3>
+              <p>Animated car, pulsing clock, and numpad give instant feedback as each problem hits.</p>
+            </div>
+          </li>
+          <li>
+            <span class="step-number">03</span>
+            <div>
+              <h3>Celebrate and climb</h3>
+              <p>Confetti pops, streak multipliers, and live leaderboards keep math practice addictive.</p>
+            </div>
+          </li>
+        </ol>
+      </div>
+      <div class="timeline-visual">
+        <div class="pulse"></div>
+        <div class="timer-pill">
+          <p>Live countdown</p>
+          <strong>3.42s</strong>
+        </div>
+        <div class="score-card">
+          <p>Kid Turbo 🏁</p>
+          <strong>Best streak: 18</strong>
+          <span>+3 vs last run</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section scoreboard-preview">
+      <div class="section-header">
+        <p class="eyebrow">Scoreboard preview</p>
+        <h2>Winner-only celebration screen.</h2>
+      </div>
+      <div class="celebration-preview" aria-label="Winning player celebration">
+        <div class="emoji-rain" aria-hidden="true">
+          <span class="emojitar" style="--x: 8%; --delay: 0s; --duration: 7s; --scale: 1.1;">🏎️</span>
+          <span class="emojitar" style="--x: 22%; --delay: 1s; --duration: 6.3s; --scale: 0.9;">🏎️</span>
+          <span class="emojitar" style="--x: 37%; --delay: 0.5s; --duration: 7.5s; --scale: 1.4;">🏎️</span>
+          <span class="emojitar" style="--x: 53%; --delay: 1.2s; --duration: 6.8s; --scale: 1;">🏎️</span>
+          <span class="emojitar" style="--x: 68%; --delay: 0.2s; --duration: 7.2s; --scale: 1.3;">🏎️</span>
+          <span class="emojitar" style="--x: 82%; --delay: 1.5s; --duration: 6.5s; --scale: 0.95;">🏎️</span>
+          <span class="emojitar" style="--x: 94%; --delay: 0.8s; --duration: 7s; --scale: 1.2;">🏎️</span>
+        </div>
+        <div class="winner-callout">
+          <p>Champion</p>
+          <h3>Nova Swift wins!</h3>
+        </div>
+      </div>
+    </section>
+
+    <section id="modes" class="section modes">
+      <div class="section-header">
+        <p class="eyebrow">Dual-lane mastery</p>
+        <h2>Pick the mode that matches your vibe.</h2>
+      </div>
+      <div class="mode-grid">
+        <article>
+          <header>
+            <p>Kid Turbo</p>
+            <span class="chip">Ages 7-11</span>
+          </header>
+          <ul>
+            <li>Bright cues, friendlier pacing</li>
+            <li>Operands stick to 1–12</li>
+            <li>Buddy board leaderboard</li>
+          </ul>
+          <button class="pill pill-solid">See kid journey</button>
+        </article>
+        <article>
+          <header>
+            <p>Adult Turbo</p>
+            <span class="chip">Competitive</span>
+          </header>
+          <ul>
+            <li>Up to 25× tables</li>
+            <li>Faster countdown, streak boosts</li>
+            <li>Global leaderboard + invites</li>
+          </ul>
+          <button class="pill pill-outline">See adult journey</button>
+        </article>
+      </div>
+    </section>
+
+    <section id="parents" class="section parents">
+      <div class="parent-card">
+        <div>
+          <p class="eyebrow">For parents & educators</p>
+          <h2>Clarity, privacy, and measurable focus.</h2>
+          <p>Turbo Times Table keeps data local, offers anonymous leaderboard tags, and ships weekly progress reports you can email directly from the app.</p>
+        </div>
+        <ul>
+          <li>
+            <strong>Weekly focus reports</strong>
+            <span>See streaks, accuracy, and favorite tables at a glance.</span>
+          </li>
+          <li>
+            <strong>Session timer controls</strong>
+            <span>Set practice caps or enable zen mode for calmer sessions.</span>
+          </li>
+          <li>
+            <strong>Guardian-approved avatars</strong>
+            <span>No personal photos — just emoji racers.</span>
+          </li>
+        </ul>
+      </div>
+      <div class="parent-visual">
+        <div class="report">
+          <header>
+            <p>Weekly Lap Report</p>
+            <span>Delivered Sundays</span>
+          </header>
+          <div class="report-body">
+            <p>Accuracy</p>
+            <strong>92%</strong>
+            <p>Average streak</p>
+            <strong>8</strong>
+            <p>Hot tables</p>
+            <span class="chips">
+              <span>×6</span>
+              <span>×7</span>
+              <span>×9</span>
+            </span>
+          </div>
+        </div>
+        <div class="avatar-stack">
+          <span>🛼</span>
+          <span>🚀</span>
+          <span>🏎️</span>
+          <span>🎧</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="download" class="cta">
+    <div>
+      <p class="eyebrow">Ready to race?</p>
+      <h2>Bring Turbo Times Table to your iPhone or iPad.</h2>
+      <p>Download free, unlock multiplayer invites, and start beating the buzzer today.</p>
+      <div class="actions">
+        <a class="pill pill-solid" href="#">Download on the App Store</a>
+        <a class="pill pill-outline" href="mailto:hello@turbotimes.app">Contact us</a>
+      </div>
+    </div>
+    <p class="footer-note">© <span id="year"></span> TurboXTable. Built with SwiftUI + a dash of neon.</p>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>

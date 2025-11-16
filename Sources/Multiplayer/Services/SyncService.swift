@@ -229,6 +229,47 @@ final class MultiplayerSyncService: ObservableObject {
         }
     }
     
+    func returnToLobby() async {
+        guard isLocalHost else {
+            FlowLogger.trace("Return to lobby ignored → not host")
+            return
+        }
+        guard let gameId = currentGameId else {
+            FlowLogger.trace("Return to lobby ignored → missing gameId")
+            return
+        }
+        
+        let gameRef = db.collection("games").document(gameId)
+        do {
+            let playersSnapshot = try await gameRef.collection("players").getDocuments()
+            for playerDoc in playersSnapshot.documents {
+                try await playerDoc.reference.updateData([
+                    "isReady": false,
+                    "score": 0,
+                    "latestAnswer": FieldValue.delete(),
+                    "isCorrect": FieldValue.delete(),
+                    "isFirstCorrect": FieldValue.delete(),
+                    "submittedAt": FieldValue.delete()
+                ])
+            }
+            
+            try await gameRef.setData([
+                "state": "lobby",
+                "countdownRemaining": 0,
+                "roundStartedAt": FieldValue.delete(),
+                "winnerId": FieldValue.delete(),
+                "updatedAt": FieldValue.serverTimestamp()
+            ], merge: true)
+            
+            processedAnswerKeys.removeAll()
+            currentQuestionIndex = 1
+            questionTimer?.invalidate()
+            FlowLogger.trace("Multiplayer returned to lobby → \(gameId)")
+        } catch {
+            FlowLogger.trace("Return to lobby failed → \(error.localizedDescription)")
+        }
+    }
+    
     func resetGameDocument(gameId: String, mode: GameMode) async {
         let gameRef = db.collection("games").document(gameId)
         do {
@@ -598,6 +639,10 @@ final class MultiplayerSyncService: ObservableObject {
     private func resetQuestionTimer() {
         questionTimer?.invalidate()
         guard game.phase == .round else { return }
+        guard isLocalHost else {
+            FlowLogger.trace("Question timer skipped → not host")
+            return
+        }
         
         questionTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: false) { [weak self] _ in
             guard let self else { return }
@@ -609,6 +654,10 @@ final class MultiplayerSyncService: ObservableObject {
     }
 
     private func skipToNextQuestion() async {
+        guard isLocalHost else {
+            FlowLogger.trace("Skip question ignored → not host")
+            return
+        }
         guard let gameId = currentGameId,
               let round = game.currentRound else { return }
         
