@@ -96,9 +96,6 @@ struct GameSceneView: View {
                             symbolFontSize: numpadSymbolFontSize,
                             verticalSpacing: 10,
                             horizontalSpacing: 10,
-                            backgroundForButton: { _, isEnabled in
-                                isEnabled ? Color.white.opacity(0.25) : Color.red.opacity(0.35)
-                            },
                             isButtonEnabled: { _ in viewModel.isGameActive },
                             onDisabledPress: {
                                 UIImpactFeedbackGenerator(style: .medium).impactOccurred()

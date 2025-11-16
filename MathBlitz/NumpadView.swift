@@ -20,9 +20,6 @@ struct NumpadView: View {
     var symbolFontSize: CGFloat = 28
     var verticalSpacing: CGFloat = 12
     var horizontalSpacing: CGFloat = 12
-    var backgroundForButton: (String, Bool) -> Color = { _, isEnabled in
-        isEnabled ? Color.white.opacity(0.25) : Color.red.opacity(0.35)
-    }
     var foregroundForButton: (String, Bool) -> Color = { _, _ in .white }
     var isButtonEnabled: (String) -> Bool = { _ in true }
     var onDisabledPress: (() -> Void)?
@@ -45,14 +42,20 @@ struct NumpadView: View {
                             SoundEffectPlayer.shared.playGlassSound()
                             onPress(value)
                         } label: {
-                            Text(value)
-                                .font(isDigit ? .bobaland(size: digitFontSize) :
-                                        .system(size: symbolFontSize, weight: .bold, design: .rounded))
-                                .frame(width: buttonSize, height: buttonSize)
-                                .background(backgroundForButton(value, enabled))
-                                .foregroundColor(foregroundForButton(value, enabled))
-                                .clipShape(Circle())
-                                .shadow(radius: 3)
+                            ZStack {
+                                Circle()
+                                    .fill(.ultraThinMaterial)
+                                    .overlay(
+                                        Circle()
+                                            .stroke(Color.white.opacity(0.5), lineWidth: 1)
+                                    )
+                                
+                                Text(value)
+                                    .font(isDigit ? .bobaland(size: digitFontSize) :
+                                            .system(size: symbolFontSize, weight: .bold, design: .rounded))
+                                    .foregroundColor(foregroundForButton(value, enabled))
+                            }
+                            .frame(width: buttonSize, height: buttonSize)
                         }
                         .buttonStyle(.plain)
                     }
