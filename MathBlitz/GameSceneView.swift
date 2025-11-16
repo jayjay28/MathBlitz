@@ -41,13 +41,6 @@ struct GameSceneView: View {
         _showStartPanel = State(initialValue: requireManualStart)
     }
     
-    private let numpadRows: [[String]] = [
-        ["1", "2", "3"],
-        ["4", "5", "6"],
-        ["7", "8", "9"],
-        ["C", "0", "⌫"]
-    ]
-    
     var body: some View {
         ZStack {
             LinearGradient(colors: [.purple, .blue], startPoint: .topLeading, endPoint: .bottomTrailing)
@@ -97,7 +90,24 @@ struct GameSceneView: View {
                                 }
                         }
                         
-                        numpadView
+                        NumpadView(
+                            buttonSize: numpadButtonSize,
+                            digitFontSize: numpadFontSize,
+                            symbolFontSize: numpadSymbolFontSize,
+                            verticalSpacing: 10,
+                            horizontalSpacing: 10,
+                            backgroundForButton: { _, isEnabled in
+                                isEnabled ? Color.white.opacity(0.25) : Color.red.opacity(0.35)
+                            },
+                            isButtonEnabled: { _ in viewModel.isGameActive },
+                            onDisabledPress: {
+                                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                                SoundEffectPlayer.shared.playBlocked()
+                            },
+                            onPress: { value in
+                                viewModel.handleNumpadPress(value: value)
+                            }
+                        )
                         
                         if shouldShowSkillLabEndButton {
                             skillLabEndButton
@@ -239,6 +249,7 @@ struct GameSceneView: View {
     }
     
     private func startManualGame() {
+        SoundEffectPlayer.shared.playNextSelect()
         viewModel.updateGameMode(pendingMode)
         FlowLogger.trace("Manual game start → mode \(pendingMode.rawValue)")
         viewModel.resetGame()
@@ -266,27 +277,6 @@ struct GameSceneView: View {
         withAnimation(animation.delay(0.2)) { scoreShakeOffset = 0 }
     }
 
-    private var numpadView: some View {
-        VStack(spacing: 10) {
-            ForEach(numpadRows, id: \.self) { row in
-                HStack(spacing: 10) {
-                    ForEach(row, id: \.self) { value in
-                        let isDigit = value.allSatisfy { $0.isNumber }
-                        Button(action: { viewModel.handleNumpadPress(value: value) }) {
-                            Text(value)
-                                .font(isDigit ? .bobaland(size: numpadFontSize) : .system(size: numpadSymbolFontSize, weight: .bold, design: .rounded))
-                                .frame(width: numpadButtonSize, height: numpadButtonSize)
-                                .background(Color.white.opacity(0.25))
-                                .foregroundColor(.white)
-                                .clipShape(Circle())
-                                .shadow(radius: 3)
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
     private var countdownClock: some View {
         let ratio = max(0, min(1, viewModel.timeRemainingRatio))
         let seconds = max(0, viewModel.timeRemainingSeconds)
