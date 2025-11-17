@@ -14,6 +14,7 @@ struct MultiplayerGameView: View {
     @StateObject private var multiplayerGameViewModel = GameViewModel()
     @State private var roundTimerTask: Task<Void, Never>?
     @State private var didLogResultForRound = false
+    @State private var isRematchInProgress = false
     private let roundDuration: TimeInterval = 60
     @State private var timerTick = Date()
     private let uiTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
@@ -53,6 +54,7 @@ struct MultiplayerGameView: View {
                         round: round,
                         players: syncService.game.players,
                         timeRemaining: timeRemainingSeconds(),
+                        winnerId: syncService.game.players.max(by: { $0.score < $1.score })?.id,
                         onSubmitAnswer: { answer in
                             guard let profile = appState.profile else { return }
                             Task {
@@ -71,9 +73,28 @@ struct MultiplayerGameView: View {
                 ScoreboardView(
                     players: syncService.game.players,
                     winnerId: syncService.game.winnerId,
+                    isHost: isHost,
+                    isRematchInProgress: isRematchInProgress,
+                    isLocalReady: localPlayer?.isReady ?? false,
+                    allPlayersReady: allPlayersReadyForRematch,
+                    localPlayerId: localPlayer?.id,
+                    onRematch: {
+                        guard isHost else { return }
+                        guard allPlayersReadyForRematch else {
+                            FlowLogger.trace("Rematch blocked → waiting for ready confirmations")
+                            return
+                        }
+                        isRematchInProgress = true
+                        startMatchIfPossible()
+                    },
+                    onLeave: {
+                        leaveMatch()
+                    },
+                    onToggleReady: { isReady in
+                        Task { await updateLocalReadyStatus(isReady: isReady) }
+                    },
                     onClose: {
-                        syncService.detach()
-                        onExit()
+                        leaveMatch()
                     }
                 )
             }
@@ -99,13 +120,17 @@ struct MultiplayerGameView: View {
             switch phase {
             case .round:
                 didLogResultForRound = false
+                isRematchInProgress = false
                 startRoundTimerIfNeeded()
+            case .countdown:
+                isRematchInProgress = false
             case .scoreboard:
                 cancelRoundTimer()
                 recordResultsIfNeeded()
             case .lobby:
                 cancelRoundTimer()
                 didLogResultForRound = false
+                isRematchInProgress = false
             default:
                 break
             }
@@ -156,6 +181,17 @@ struct MultiplayerGameView: View {
         roundTimerTask = nil
     }
     
+    private var localPlayer: MultiplayerPlayerState? {
+        guard let localId = appState.profile?.id else { return nil }
+        return syncService.game.players.first { $0.id == localId }
+    }
+    
+    private var allPlayersReadyForRematch: Bool {
+        let players = syncService.game.players
+        guard !players.isEmpty else { return false }
+        return players.allSatisfy { $0.isReady }
+    }
+    
     private func recordResultsIfNeeded() {
         guard !didLogResultForRound,
               let localProfile = appState.profile else { return }
@@ -178,6 +214,21 @@ struct MultiplayerGameView: View {
         didLogResultForRound = true
     }
     
+    private func updateLocalReadyStatus(isReady: Bool) async {
+        guard let profile = appState.profile else { return }
+        await syncService.toggleReady(isReady: isReady, profile: profile)
+    }
+    
+    private func leaveMatch() {
+        Task {
+            await updateLocalReadyStatus(isReady: false)
+            await MainActor.run {
+                syncService.detach()
+                onExit()
+            }
+        }
+    }
+    
     private func timeRemainingSeconds() -> Int {
         guard let start = syncService.game.roundStartedAt else {
             return Int(roundDuration)
@@ -186,3 +237,22 @@ struct MultiplayerGameView: View {
         return max(0, Int(roundDuration - elapsed))
     }
 }
+
+#if DEBUG
+struct MultiplayerGameView_Previews: PreviewProvider {
+    static var previews: some View {
+        let previewService = MultiplayerSyncService.shared
+        previewService.configurePreview(game: .previewScoreboard)
+        let previewProfile = PlayerProfile.fresh(
+            id: "host",
+            displayName: "Preview Host",
+            emojitar: Emojitar(emoji: "😎", colorHex: "#FF4ECD"),
+            mode: .kids
+        )
+        return MultiplayerGameView(gameId: "PREVIEW", isHost: true, onExit: {})
+            .environmentObject(AppState(previewProfile: previewProfile,
+                                        initialFlow: .multiplayer(gameId: "PREVIEW", isHost: true)))
+            .previewDisplayName("Multiplayer Game View")
+    }
+}
+#endif

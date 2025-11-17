@@ -45,7 +45,12 @@ struct GameSceneView: View {
         ZStack {
             LinearGradient(colors: [.purple, .blue], startPoint: .topLeading, endPoint: .bottomTrailing)
                 .ignoresSafeArea()
-
+            
+            gameBody
+                .opacity(showStartPanel ? 0 : 1)
+                .allowsHitTesting(!showStartPanel)
+                .transition(.opacity.animation(.easeInOut(duration: 0.3)))
+            
             if showStartPanel {
                 ManualStartOverlay(
                     pendingMode: $pendingMode,
@@ -53,12 +58,60 @@ struct GameSceneView: View {
                     onMultiplayerTapped: onMultiplayerTapped
                 )
                 .transition(.opacity)
-            } else {
-                gameBody
-                    .transition(.opacity.animation(.easeInOut(duration: 0.3)))
+            }
+            
+            menuButtonLayer
+            
+            if isMenuOpen {
+                Color.black.opacity(0.25)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                            isMenuOpen = false
+                        }
+                    }
+                
+                SideMenuView(onLeaderboard: {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                        isMenuOpen = false
+                    }
+                    onLeaderboardTapped()
+                }, onSettings: {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                        isMenuOpen = false
+                    }
+                    onSettingsTapped()
+                }, onMultiplayer: {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                        isMenuOpen = false
+                    }
+                    onMultiplayerTapped()
+                })
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .transition(.move(edge: .leading).combined(with: .opacity))
             }
         }
-        .onAppear(perform: handleAppear)
+        .gesture(
+            DragGesture(minimumDistance: 20)
+                .onEnded { value in
+                    let horizontal = value.translation.width
+                    let vertical = abs(value.translation.height)
+                    guard abs(horizontal) > vertical else { return }
+                    if horizontal > 40 {
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                            isMenuOpen = true
+                        }
+                    } else if horizontal < -40 {
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                            isMenuOpen = false
+                        }
+                    }
+                }
+        )
+        .onAppear {
+            handleAppear()
+            SoundEffectPlayer.shared.ensureAmbientLoopRunning()
+        }
         .onChange(of: viewModel.gameMode) { mode in
             pendingMode = mode
         }
@@ -133,8 +186,6 @@ struct GameSceneView: View {
                         .transition(.opacity.animation(.easeInOut(duration: 0.5)))
                 }
                 
-                menuButtonLayer
-
                 if viewModel.showHighScoreCelebration {
                     HighScoreCelebrationView(score: viewModel.score,
                                              onDismiss: viewModel.dismissCelebration)
@@ -147,36 +198,6 @@ struct GameSceneView: View {
                         .padding(.top, 80)
                         .transition(.move(edge: .top).combined(with: .opacity))
                 }
-
-                if isMenuOpen {
-                    Color.black.opacity(0.25)
-                        .ignoresSafeArea()
-                        .onTapGesture {
-                            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                                isMenuOpen = false
-                            }
-                        }
-                    
-                    SideMenuView(onLeaderboard: {
-                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                            isMenuOpen = false
-                        }
-                        onLeaderboardTapped()
-                    }, onSettings: {
-                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                            isMenuOpen = false
-                        }
-                        onSettingsTapped()
-                    }, onMultiplayer: {
-                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                            isMenuOpen = false
-                        }
-                        onMultiplayerTapped()
-                    })
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .transition(.move(edge: .leading).combined(with: .opacity))
-                }
-
             }
         }
     }
@@ -372,11 +393,13 @@ extension GameSceneView {
                         .clipShape(Circle())
                         .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
                 }
-                .padding(.leading, 24)
-                .padding(.top, 20)
                 
                 Spacer()
+                
+                AmbientSoundToggleButton()
             }
+            .padding(.horizontal, 24)
+            .padding(.top, 20)
             
             Spacer()
         }
@@ -713,7 +736,7 @@ private struct ManualStartOverlay: View {
                                 .font(.system(size: 32, weight: .medium))
                             
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("Skill Lab")
+                                Text("Skills Lab")
                                     .font(.bobaland(size: 32))
                                 Text("Train your brain")
                                     .font(.system(size: 16, weight: .medium, design: .rounded))
@@ -741,21 +764,6 @@ private struct ManualStartOverlay: View {
                     }
                     .buttonStyle(PrimaryGameModeButtonStyle())
                 }
-                
-                VStack {
-                    Text("Single Player Mode")
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
-                        .foregroundColor(.white.opacity(0.7))
-                        .padding(.bottom, 6)
-                    
-                    Picker("Mode", selection: $pendingMode) {
-                        ForEach(GameMode.allCases) { mode in
-                            Text(mode.displayName).tag(mode)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                }
-                .padding(.top, 12)
             }
             .padding(28)
         }

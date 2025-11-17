@@ -10,9 +10,14 @@ import SwiftUI
 struct ScoreboardView: View {
     var players: [MultiplayerPlayerState]
     var winnerId: String?
-    var isHost: Bool = false
-    var isReturningToLobby: Bool = false
-    var onReturnToLobby: () -> Void = {}
+    var isHost: Bool
+    var isRematchInProgress: Bool
+    var isLocalReady: Bool
+    var allPlayersReady: Bool
+    var localPlayerId: String?
+    var onRematch: () -> Void
+    var onLeave: () -> Void
+    var onToggleReady: (Bool) -> Void
     var onClose: () -> Void
     
     var body: some View {
@@ -24,22 +29,7 @@ struct ScoreboardView: View {
                     .font(.system(size: 16, weight: .medium, design: .rounded))
                     .foregroundColor(.white.opacity(0.8))
             } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 24) {
-                        ForEach(Array(sortedPlayers.enumerated()), id: \.1.id) { index, player in
-                            MultiplayerScoreCardView(
-                                emoji: player.profile.emojitar.emoji,
-                                displayName: player.profile.displayName,
-                                score: player.score,
-                                rank: index + 1,
-                                caption: "#\(index + 1)",
-                                isWinner: player.id == winnerId,
-                                style: .large
-                            )
-                        }
-                    }
-                    .padding(.horizontal, 6)
-                }
+                scoresList
             }
             
             actionSection
@@ -58,32 +48,112 @@ struct ScoreboardView: View {
         players.sorted { $0.score > $1.score }
     }
     
+    private var scoresList: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Emojitar | Name | Score | Status")
+                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white.opacity(0.8))
+                ForEach(Array(sortedPlayers.enumerated()), id: \.1.id) { index, player in
+                    HStack(spacing: 12) {
+                        Text(player.profile.emojitar.emoji)
+                            .font(.system(size: 28))
+                        Text("|")
+                            .foregroundColor(.white.opacity(0.5))
+                        Text(player.profile.displayName)
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                        Text("|")
+                            .foregroundColor(.white.opacity(0.5))
+                        Spacer()
+                        Text("\(player.score)")
+                            .font(.system(size: 24, weight: .heavy, design: .rounded))
+                            .foregroundColor(player.id == winnerId ? .green : .white)
+                        Text("|")
+                            .foregroundColor(.white.opacity(0.5))
+                        Text(player.isReady ? "Ready" : "Sitting Out")
+                            .font(.system(size: 16, weight: .semibold, design: .rounded))
+                            .foregroundColor(player.isReady ? .green : .red)
+                    }
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, 16)
+                    .background(
+                        RoundedRectangle(cornerRadius: 18)
+                            .fill(player.id == winnerId ? Color.white.opacity(0.18) : Color.white.opacity(0.08))
+                    )
+                    .overlay(
+                        Text("#\(index + 1)")
+                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                            .foregroundColor(.white.opacity(0.8))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(Color.black.opacity(0.35))
+                            .clipShape(Capsule())
+                            .offset(x: -10, y: -28),
+                        alignment: .topLeading
+                    )
+                }
+            }
+        }
+    }
+    
     private var actionSection: some View {
+        VStack(spacing: 16) {
+            localParticipationControls
+            rematchControls
+        }
+    }
+    
+    private var localParticipationControls: some View {
+        Group {
+            if localPlayerId != nil {
+                Button(action: { onToggleReady(!isLocalReady) }) {
+                    Text(isLocalReady ? "I'm Out" : "Count Me In")
+                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.white.opacity(isLocalReady ? 0.15 : 0.3))
+                        .cornerRadius(18)
+                }
+                
+                Button(action: onLeave) {
+                    Text("Leave Match")
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.white.opacity(0.12))
+                        .cornerRadius(14)
+                }
+            }
+        }
+    }
+    
+    private var rematchControls: some View {
         VStack(spacing: 12) {
             if isHost {
-                Button(action: onReturnToLobby) {
+                Button(action: onRematch) {
                     HStack {
-                        if isReturningToLobby {
+                        if isRematchInProgress {
                             ProgressView()
                                 .progressViewStyle(CircularProgressViewStyle(tint: .white))
                         }
-                        Text(isReturningToLobby ? "Returning to Lobby…" : "Return to Lobby")
+                        Text(isRematchInProgress ? "Starting Rematch…" : "Rematch")
                             .font(.system(size: 18, weight: .bold, design: .rounded))
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(Color.white.opacity(0.2))
+                    .background(Color.white.opacity(allPlayersReady ? 0.3 : 0.1))
                     .cornerRadius(16)
                 }
-                .disabled(isReturningToLobby)
+                .disabled(isRematchInProgress || !allPlayersReady)
                 
-                Text("Send everyone back to the ready room to decide if you want a rematch.")
+                Text(allPlayersReady ? "All racers are ready!" : "Waiting for everyone to confirm or opt out.")
                     .font(.system(size: 14, weight: .medium, design: .rounded))
-                    .foregroundColor(.white.opacity(0.8))
+                    .foregroundColor(.white.opacity(0.85))
             } else {
-                Text("Waiting for the host to return to the lobby or end the session.")
+                Text(allPlayersReady ? "Host can start the rematch any moment." : "Tap above to sit out or let others know you're ready.")
                     .font(.system(size: 16, weight: .medium, design: .rounded))
-                    .foregroundColor(.white.opacity(0.8))
+                    .foregroundColor(.white.opacity(0.85))
                     .multilineTextAlignment(.center)
             }
         }
@@ -103,3 +173,30 @@ struct ScoreboardView: View {
         }
     }
 }
+
+#if DEBUG
+struct SharedScoreboardView_Previews: PreviewProvider {
+    static let samplePlayers: [MultiplayerPlayerState] = [
+        .mock(id: "p1", displayName: "Speedy Sam", score: 18, isFirstCorrect: true, isCorrect: true, isReady: true),
+        .mock(id: "p2", displayName: "Rocket Rae", score: 14, isReady: true),
+        .mock(id: "p3", displayName: "Turbo Taj", score: 9, isReady: false)
+    ]
+    
+    static var previews: some View {
+        ScoreboardView(
+            players: samplePlayers,
+            winnerId: samplePlayers.first?.id,
+            isHost: true,
+            isRematchInProgress: false,
+            isLocalReady: false,
+            allPlayersReady: false,
+            localPlayerId: samplePlayers.first?.id,
+            onRematch: {},
+            onLeave: {},
+            onToggleReady: { _ in },
+            onClose: {}
+        )
+        .previewDisplayName("Shared Scoreboard Rematch")
+    }
+}
+#endif

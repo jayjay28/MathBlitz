@@ -34,12 +34,22 @@ struct EmojitarBadge: View {
     
     private var diameter: CGFloat { size.diameter }
     private var fontSize: CGFloat { diameter * 0.55 }
+    private var fillGradient: RadialGradient {
+        RadialGradient(
+            gradient: Gradient(colors: [
+                color.opacity(0.95),
+                color.opacity(0.4)
+            ]),
+            center: .center,
+            startRadius: 0,
+            endRadius: diameter * 0.75
+        )
+    }
     
     var body: some View {
         ZStack {
             Circle()
-                .fill(Color.clear)
-                .clipShape(Circle())
+                .fill(fillGradient)
                 .overlay {
                     if ring {
                         Circle()
@@ -50,6 +60,12 @@ struct EmojitarBadge: View {
                         radius: glow ? diameter * 0.22 : 0,
                         x: 0,
                         y: 0)
+                .background(
+                    Circle()
+                        .fill(color.opacity(glow ? 0.45 : 0.25))
+                        .scaleEffect(glow ? 1.22 : 1.08)
+                        .blur(radius: glow ? diameter * 0.32 : diameter * 0.2)
+                )
             Text(emoji)
                 .font(.system(size: fontSize))
                 .minimumScaleFactor(0.5)

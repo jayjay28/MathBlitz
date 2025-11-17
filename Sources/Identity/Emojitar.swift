@@ -23,7 +23,8 @@ struct Emojitar: Equatable, Codable {
     
     static let emojiPalette: [String] = [
         "⚡️","🚀","🔥","🧠","🐢","😎","🦖",
-        "🍀","🎯","💎","🏁","📚","🕹️"
+        "🍀","🎯","💎","🏁","📚","🕹️",
+        "🌸","💖","💅","🦄","🧜‍♀️","🦋"
     ]
     
     static let `default` = Emojitar(

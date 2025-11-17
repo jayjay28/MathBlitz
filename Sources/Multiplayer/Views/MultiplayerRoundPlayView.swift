@@ -21,13 +21,6 @@ struct MultiplayerRoundPlayView: View {
     @State private var numpadShake: CGFloat = 0 // New state for numpad shake
     @State private var numpadFlash: Bool = false // New state for numpad flash
     
-    private let numpadRows = [
-        ["1","2","3"],
-        ["4","5","6"],
-        ["7","8","9"],
-        ["C","0","⌫"]
-    ]
-    
     private var isLocked: Bool {
         round.answers.contains { $0.isCorrect }
     }
@@ -45,7 +38,27 @@ struct MultiplayerRoundPlayView: View {
                             .padding(.horizontal, 16)
                             .padding(.bottom, 16)
 
-                        numpadView
+                        NumpadView(
+                            buttonSize: 80,
+                            digitFontSize: 44,
+                            symbolFontSize: 28,
+                            verticalSpacing: 12,
+                            horizontalSpacing: 12,
+                            backgroundForButton: { _, isEnabled in
+                                if numpadFlash {
+                                    return Color.red.opacity(0.6)
+                                }
+                                return isEnabled ? Color.white.opacity(0.25) : Color.red.opacity(0.35)
+                            },
+                            isButtonEnabled: { _ in !(isLocked || hasSubmittedThisQuestion) },
+                            onDisabledPress: {
+                                triggerNumpadBlockedFeedback()
+                            },
+                            onPress: { value in
+                                handleNumpadPress(value: value)
+                            }
+                        )
+                        .offset(x: numpadShake)
                     }
                     .padding(.bottom, geo.safeAreaInsets.bottom + 24)
                 }
@@ -129,38 +142,8 @@ struct MultiplayerRoundPlayView: View {
         .padding(.horizontal, 12)
     }
     
-    private var numpadView: some View {
-        VStack(spacing: 12) {
-            ForEach(numpadRows, id: \.self) { row in
-                HStack {
-                    ForEach(row, id: \.self) { value in
-                        let isDigit = value.allSatisfy { $0.isNumber }
-                        Button {
-                            handleNumpadPress(value: value)
-                        } label: {
-                            Text(value)
-                                .font(isDigit ? .bobaland(size: 44) : .system(size: 28, weight: .bold, design: .rounded))
-                                .frame(width: 80, height: 80)
-                                .background(
-                                    Circle()
-                                        .fill(numpadFlash ? Color.red.opacity(0.6) : Color.white.opacity(isLocked ? 0.1 : 0.25))
-                                )
-                                .foregroundColor(.white)
-                                .shadow(radius: 3)
-                        }
-                        .disabled(isLocked || hasSubmittedThisQuestion)
-                    }
-                }
-            }
-        }
-        .offset(x: numpadShake) // Apply shake here
-    }
-    
     private func handleNumpadPress(value: String) {
-        guard !(isLocked || hasSubmittedThisQuestion) else {
-            triggerNumpadBlockedFeedback()
-            return
-        }
+        guard !(isLocked || hasSubmittedThisQuestion) else { return }
         if value == "⌫" {
             if !userAnswer.isEmpty {
                 userAnswer.removeLast()
@@ -219,6 +202,7 @@ struct MultiplayerRoundPlayView: View {
         
         // Haptic feedback for error
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        SoundEffectPlayer.shared.playBlocked()
     }
 }
 
@@ -239,7 +223,7 @@ extension MultiplayerRound {
 }
 
 extension MultiplayerPlayerState {
-    static func mock(id: String, displayName: String, score: Int, isFirstCorrect: Bool = false, isCorrect: Bool = false) -> MultiplayerPlayerState {
+    static func mock(id: String, displayName: String, score: Int, isFirstCorrect: Bool = false, isCorrect: Bool = false, isReady: Bool = true) -> MultiplayerPlayerState {
         MultiplayerPlayerState(
             profile: PlayerProfile.fresh(
                 id: id,
@@ -247,7 +231,7 @@ extension MultiplayerPlayerState {
                 emojitar: Emojitar(emoji: "🚀", colorHex: "#FFD700"),
                 mode: .kids
             ),
-            isReady: true,
+            isReady: isReady,
             score: score,
             latestAnswer: nil,
             isCorrect: isCorrect,

@@ -161,3 +161,19 @@ private struct InviteBanner: View {
         .shadow(radius: 12)
     }
 }
+
+#if DEBUG
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        let profile = PlayerProfile.fresh(
+            id: "preview",
+            displayName: "Preview Pilot",
+            emojitar: .default,
+            mode: .kids
+        )
+        let state = AppState(previewProfile: profile, initialFlow: .gameplay)
+        return ContentView()
+            .environmentObject(state)
+    }
+}
+#endif

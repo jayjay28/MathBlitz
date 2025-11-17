@@ -26,24 +26,7 @@ struct OnboardingView: View {
             card
                 .padding(.horizontal, 24)
             
-            HStack {
-                if step > 0 {
-                    Button("Back") {
-                        FlowLogger.trace("Onboarding retreat from step \(step)")
-                        step -= 1
-                    }
-                    .buttonStyle(SecondaryButtonStyle())
-                }
-                
-                Spacer()
-                
-                if step < 3 {
-                    Button("Next", action: advance)
-                        .buttonStyle(PrimaryButtonStyle())
-                        .disabled(step == 1 ? name.trimmingCharacters(in: .whitespaces).isEmpty : false)
-                }
-            }
-            .padding(.horizontal, 36)
+            controlBar
         }
         .padding(.vertical, 40)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -114,10 +97,10 @@ struct OnboardingView: View {
                     }
                 }
             default:
-                OnboardingEmojitarView(emojitar: $emojitar) { updated in
-                    emojitar = updated
-                    finish()
-                }
+                OnboardingEmojitarView(
+                    emojitar: $emojitar,
+                    showsEmbeddedSaveButton: false
+                ) { _ in }
             }
         }
         .padding(28)
@@ -141,6 +124,30 @@ struct OnboardingView: View {
         let finalName = trimmedName.isEmpty ? "Puzzle Master" : trimmedName
         FlowLogger.trace("Onboarding finished → name: \(finalName), mode: \(mode.rawValue)")
         onComplete(finalName, emojitar, mode)
+    }
+    
+    private var controlBar: some View {
+        HStack {
+            if step > 0 {
+                Button("Back") {
+                    FlowLogger.trace("Onboarding retreat from step \(step)")
+                    step -= 1
+                }
+                .buttonStyle(SecondaryButtonStyle())
+            }
+            
+            Spacer()
+            
+            if step < 3 {
+                Button("Next", action: advance)
+                    .buttonStyle(PrimaryButtonStyle())
+                    .disabled(step == 1 ? name.trimmingCharacters(in: .whitespaces).isEmpty : false)
+            } else {
+                Button("Save my vibe", action: finish)
+                    .buttonStyle(PrimaryButtonStyle())
+            }
+        }
+        .padding(.horizontal, 36)
     }
 }
 
@@ -169,3 +176,12 @@ struct SecondaryButtonStyle: ButtonStyle {
             .scaleEffect(configuration.isPressed ? 0.96 : 1)
     }
 }
+
+#if DEBUG
+struct OnboardingView_Previews: PreviewProvider {
+    static var previews: some View {
+        OnboardingView(onComplete: { _, _, _ in })
+            .previewDisplayName("Onboarding Flow")
+    }
+}
+#endif

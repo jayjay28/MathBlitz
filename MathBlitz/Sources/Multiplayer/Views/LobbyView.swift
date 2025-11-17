@@ -160,6 +160,9 @@ private struct ReadyToggleButton: View {
             localOverride = next
             action(next)
             tapHaptic(isReady: next)
+            if next {
+                SoundEffectPlayer.shared.playReadyToggle()
+            }
             FlowLogger.trace("Lobby ready button tapped → next=\(next)")
             withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
                 isAnimating.toggle()

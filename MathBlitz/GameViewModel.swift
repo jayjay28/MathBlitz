@@ -205,14 +205,14 @@ var isMultiplayerContext: Bool = false
                 levelUp()
             }
             
-            scheduleNextRound(after: 0.85)
+            scheduleNextRound(after: 0)
         } else {
             backgroundPhase = .failure
             triggerScreenShake()
             triggerHapticFailure()
             registerMistake()
             FlowLogger.trace("Answer incorrect → remaining lives \(remainingLives)")
-            scheduleNextRound(after: 1.0)
+            scheduleNextRound(after: 0)
         }
     }
     
@@ -319,6 +319,10 @@ var isMultiplayerContext: Bool = false
     }
     
     private func scheduleNextRound(after delay: TimeInterval) {
+        if delay <= 0 {
+            newRound()
+            return
+        }
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
             self?.newRound()
         }

@@ -15,6 +15,9 @@ struct SettingsView: View {
     let onSignOut: () -> Void
     
     @State private var showingEmojitarEditor = false
+#if DEBUG
+    @AppStorage(DebugDefaults.forceOnboardingOnLaunchKey) private var forceOnboardingOnLaunch = false
+#endif
     
     var body: some View {
         NavigationStack {
@@ -65,6 +68,12 @@ struct SettingsView: View {
                         Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right")
                     }
                 }
+#if DEBUG
+                Section(header: Text("Debug").font(.system(size: 20, weight: .bold, design: .rounded))) {
+                    Toggle("Force onboarding on launch", isOn: $forceOnboardingOnLaunch)
+                        .font(.system(size: 16, weight: .medium, design: .rounded))
+                }
+#endif
             }
             .navigationTitle("Settings")
             .toolbar {

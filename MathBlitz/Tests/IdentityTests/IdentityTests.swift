@@ -11,7 +11,7 @@ import XCTest
 final class IdentityTests: XCTestCase {
     func testEmojitarPaletteCountMatchesSpecification() {
         XCTAssertEqual(Emojitar.colorPalette.count, 9)
-        XCTAssertEqual(Emojitar.emojiPalette.count, 12)
+        XCTAssertEqual(Emojitar.emojiPalette.count, 19)
     }
     
     func testPlayerProfilePreferredModeRoundTrip() throws {

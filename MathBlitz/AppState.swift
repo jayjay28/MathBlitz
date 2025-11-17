@@ -56,6 +56,12 @@ final class AppState: ObservableObject {
         Task { await initializeFlow() }
     }
     
+    init(previewProfile: PlayerProfile, initialFlow: AppFlow = .gameplay) {
+        self.profile = previewProfile
+        self.flow = initialFlow
+        FlowLogger.trace("AppState preview init → \(previewProfile.displayName)")
+    }
+    
     func completeOnboarding(displayName: String, emojitar: Emojitar, mode: GameMode) {
         FlowLogger.trace("Onboarding complete for \(displayName) with mode \(mode.rawValue)")
         Task {
@@ -111,6 +117,11 @@ final class AppState: ObservableObject {
             try await ensureAnonymousAuth()
             FlowLogger.trace("Anonymous auth ready")
             profileStore.hydrate()
+            if shouldForceOnboarding() {
+                FlowLogger.trace("Debug override forcing onboarding flow")
+                flow = .onboarding
+                return
+            }
             if let storedProfile = profileStore.profile,
                let userId = Auth.auth().currentUser?.uid {
                 profile = storedProfile
@@ -181,5 +192,13 @@ final class AppState: ObservableObject {
     private func normalizeSessionCode(_ code: String) -> String {
         let filtered = code.uppercased().filter { $0.isLetter || $0.isNumber }
         return filtered.isEmpty ? SessionCodeGenerator.newCode() : filtered
+    }
+    
+    private func shouldForceOnboarding() -> Bool {
+#if DEBUG
+        return UserDefaults.standard.bool(forKey: DebugDefaults.forceOnboardingOnLaunchKey)
+#else
+        return false
+#endif
     }
 }

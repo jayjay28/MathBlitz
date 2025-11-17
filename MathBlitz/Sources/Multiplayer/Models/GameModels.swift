@@ -98,3 +98,25 @@ struct MultiplayerGame: Identifiable, Equatable {
         updatedAt: Date()
     )
 }
+
+#if DEBUG
+extension MultiplayerGame {
+    static var previewScoreboard: MultiplayerGame {
+        let players = [
+            MultiplayerPlayerState.mock(id: "host", displayName: "Speedy Sam", score: 18, isFirstCorrect: true, isCorrect: true),
+            MultiplayerPlayerState.mock(id: "p2", displayName: "Rocket Rae", score: 14),
+            MultiplayerPlayerState.mock(id: "p3", displayName: "Turbo Taj", score: 9)
+        ]
+        return MultiplayerGame(
+            id: "preview",
+            players: players,
+            currentRound: nil,
+            phase: .scoreboard,
+            winnerId: players.first?.id,
+            roundStartedAt: nil,
+            createdAt: Date(),
+            updatedAt: Date()
+        )
+    }
+}
+#endif

@@ -28,8 +28,17 @@ final class MultiplayerSyncService: ObservableObject {
     private var processedAnswerKeys: Set<String> = []
     private var currentQuestionIndex: Int = 1
     private var isLocalHost = false
+    private var isPreviewMode = false
     
     private init() {}
+    
+#if DEBUG
+    func configurePreview(game: MultiplayerGame) {
+        isPreviewMode = true
+        self.game = game
+        FlowLogger.trace("Multiplayer preview configured → phase \(game.phase)")
+    }
+#endif
     
     func setIsLocalHost(_ flag: Bool) {
         isLocalHost = flag
@@ -37,6 +46,10 @@ final class MultiplayerSyncService: ObservableObject {
     }
     
     func attach(gameId: String) {
+        guard !isPreviewMode else {
+            FlowLogger.trace("Multiplayer attach skipped → preview mode")
+            return
+        }
         guard currentGameId != gameId else { return }
         detachListeners()
         currentGameId = gameId
@@ -48,12 +61,14 @@ final class MultiplayerSyncService: ObservableObject {
     }
     
     func detach() {
+        guard !isPreviewMode else { return }
         detachListeners()
         currentGameId = nil
         game = .placeholder
     }
     
     func registerPlayerIfNeeded(profile: PlayerProfile) async {
+        guard !isPreviewMode else { return }
         guard let gameId = currentGameId else {
             FlowLogger.trace("Multiplayer register skipped → missing gameId")
             return
@@ -96,6 +111,7 @@ final class MultiplayerSyncService: ObservableObject {
     }
     
     func toggleReady(isReady: Bool, profile: PlayerProfile) async {
+        guard !isPreviewMode else { return }
         guard let gameId = currentGameId else { return }
         do {
             FlowLogger.trace("Multiplayer ready toggle start → \(profile.displayName) ready=\(isReady)")
@@ -121,6 +137,7 @@ final class MultiplayerSyncService: ObservableObject {
     }
     
     func startMatch(mode: GameMode) async {
+        guard !isPreviewMode else { return }
         guard let gameId = currentGameId else {
             FlowLogger.trace("Multiplayer start match skipped → missing gameId")
             return
@@ -140,6 +157,8 @@ final class MultiplayerSyncService: ObservableObject {
         let roundRef = gameRef.collection("rounds").document(roundId)
         let countdownSeconds = 3
         currentMode = mode
+        
+        await resetScoresForNewMatch(gameId: gameId)
         
         do {
             FlowLogger.trace("Multiplayer start match → countdown + round \(roundId)")
@@ -179,7 +198,30 @@ final class MultiplayerSyncService: ObservableObject {
         }
     }
     
+    private func resetScoresForNewMatch(gameId: String) async {
+        do {
+            let playersSnapshot = try await db.collection("games")
+                .document(gameId)
+                .collection("players")
+                .getDocuments()
+            for playerDoc in playersSnapshot.documents {
+                try await playerDoc.reference.updateData([
+                    "score": 0,
+                    "isReady": false,
+                    "latestAnswer": FieldValue.delete(),
+                    "isCorrect": FieldValue.delete(),
+                    "isFirstCorrect": FieldValue.delete(),
+                    "submittedAt": FieldValue.delete()
+                ])
+            }
+            FlowLogger.trace("Multiplayer scores reset for new match")
+        } catch {
+            FlowLogger.trace("Failed to reset scores for rematch → \(error.localizedDescription)")
+        }
+    }
+    
     func submit(answer: Int, for profile: PlayerProfile, roundId: String) async throws {
+        guard !isPreviewMode else { return }
         guard let gameId = currentGameId,
               let questionIndex = game.currentRound?.questionIndex else { return }
         FlowLogger.trace("Submit answer \(answer) q\(questionIndex) by \(profile.displayName)")
@@ -207,6 +249,7 @@ final class MultiplayerSyncService: ObservableObject {
     }
     
     func finishRound() async {
+        guard !isPreviewMode else { return }
         guard let gameId = currentGameId else { return }
         questionTimer?.invalidate()
         let winnerId = determineWinnerId()
@@ -224,6 +267,7 @@ final class MultiplayerSyncService: ObservableObject {
         do {
             try await gameRef.setData(payload, merge: true)
             FlowLogger.trace("Multiplayer round finished → winner \(winnerId ?? "none")")
+            await resetReadyFlagsForRematch()
         } catch {
             FlowLogger.trace("Multiplayer finish round failed → \(error.localizedDescription)")
         }
@@ -271,6 +315,7 @@ final class MultiplayerSyncService: ObservableObject {
     }
     
     func resetGameDocument(gameId: String, mode: GameMode) async {
+        guard !isPreviewMode else { return }
         let gameRef = db.collection("games").document(gameId)
         do {
             let playersSnapshot = try await gameRef.collection("players").getDocuments()
@@ -303,11 +348,13 @@ final class MultiplayerSyncService: ObservableObject {
     }
     
     func deleteCurrentGame() async {
+        guard !isPreviewMode else { return }
         guard let gameId = currentGameId else { return }
         await deleteGameDocument(gameId: gameId)
     }
     
     private func deleteGameDocument(gameId: String) async {
+        guard !isPreviewMode else { return }
         let gameRef = db.collection("games").document(gameId)
         do {
             FlowLogger.trace("Deleting game document → \(gameId)")
@@ -327,6 +374,24 @@ final class MultiplayerSyncService: ObservableObject {
             FlowLogger.trace("Game document deleted → \(gameId)")
         } catch {
             FlowLogger.trace("Game deletion failed → \(error.localizedDescription)")
+        }
+    }
+    
+    private func resetReadyFlagsForRematch() async {
+        guard let gameId = currentGameId else { return }
+        do {
+            let playersSnapshot = try await db.collection("games")
+                .document(gameId)
+                .collection("players")
+                .getDocuments()
+            for doc in playersSnapshot.documents {
+                try await doc.reference.updateData([
+                    "isReady": false
+                ])
+            }
+            FlowLogger.trace("Player ready flags cleared for rematch selection")
+        } catch {
+            FlowLogger.trace("Failed to clear ready flags → \(error.localizedDescription)")
         }
     }
     

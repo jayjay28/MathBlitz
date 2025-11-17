@@ -10,6 +10,7 @@ import SwiftUI
 struct CountdownView: View {
     var players: [MultiplayerPlayerState]
     var secondsRemaining: Int
+    @State private var lastTickSecond: Int?
     
     var body: some View {
         VStack(spacing: 32) {
@@ -48,6 +49,12 @@ struct CountdownView: View {
             RadialGradient(colors: [.pink, .purple], center: .center, startRadius: 80, endRadius: 500)
                 .ignoresSafeArea()
         )
+        .onAppear {
+            handleTick(for: secondsRemaining)
+        }
+        .onChange(of: secondsRemaining) { newValue in
+            handleTick(for: newValue)
+        }
     }
     
     private var springyScale: CGFloat {
@@ -62,6 +69,12 @@ struct CountdownView: View {
             width: CGFloat(cos(angle)) * radius,
             height: CGFloat(sin(angle)) * radius
         )
+    }
+    
+    private func handleTick(for value: Int) {
+        guard lastTickSecond != value else { return }
+        lastTickSecond = value
+        SoundEffectPlayer.shared.playCountdownTick()
     }
 }
 
