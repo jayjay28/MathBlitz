@@ -1,5 +1,5 @@
 {
-  "originHash" : "90a74a8f155f174689f3f476cb070b82b405e21d5eb2df26a4742106237cae27",
+  "originHash" : "c63c63846d9c539229e96de38d6af51417e28c0ee9a0bc48bd0f0f19d923c329",
   "pins" : [
     {
       "identity" : "abseil-cpp-binary",
@@ -107,15 +107,6 @@
       "state" : {
         "revision" : "b7e1104502eca3a213b46303391ca4d3bc8ddec1",
         "version" : "2.30910.0"
-      }
-    },
-    {
-      "identity" : "onesignal-xcframework",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/OneSignal/OneSignal-XCFramework",
-      "state" : {
-        "revision" : "8fcd9c4dbc8ab8bb6383dd4e9bde068a6b6d4f93",
-        "version" : "5.2.15"
       }
     },
     {

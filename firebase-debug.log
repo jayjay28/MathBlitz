@@ -1,0 +1,44 @@
+[debug] [2025-11-21T01:14:51.813Z] ----------------------------------------------------------------------
+[debug] [2025-11-21T01:14:51.814Z] Command:       /Users/clyonjackson/.nvm/versions/node/v24.11.0/bin/node /Users/clyonjackson/.nvm/versions/node/v24.11.0/bin/firebase functions:secrets:set CK_ENV --data-file=-
+[debug] [2025-11-21T01:14:51.814Z] CLI Version:   14.24.2
+[debug] [2025-11-21T01:14:51.814Z] Platform:      darwin
+[debug] [2025-11-21T01:14:51.814Z] Node Version:  v24.11.0
+[debug] [2025-11-21T01:14:51.814Z] Time:          Thu Nov 20 2025 20:14:51 GMT-0500 (Eastern Standard Time)
+[debug] [2025-11-21T01:14:51.814Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-11-21T01:14:51.866Z] Object "/functions" in "firebase.json" has unknown property: {"additionalProperty":"locations"}
+[debug] [2025-11-21T01:14:51.867Z] Object "/functions" in "firebase.json" is missing required property: {"missingProperty":"remoteSource"}
+[debug] [2025-11-21T01:14:51.867Z] Field "/functions" in "firebase.json" is possibly invalid: must be array
+[debug] [2025-11-21T01:14:51.867Z] Field "/functions" in "firebase.json" is possibly invalid: must match a schema in anyOf
+[debug] [2025-11-21T01:14:51.867Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-11-21T01:14:51.868Z] > authorizing via signed-in user (clyonkj@gmail.com)
+[debug] [2025-11-21T01:14:51.868Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-11-21T01:14:51.868Z] > authorizing via signed-in user (clyonkj@gmail.com)
+[debug] [2025-11-21T01:14:51.868Z] [iam] checking project mathblitz-79f43 for permissions ["firebase.projects.get","secretmanager.secrets.create","secretmanager.secrets.get","secretmanager.secrets.update","secretmanager.versions.add"]
+[debug] [2025-11-21T01:14:51.868Z] Checked if tokens are valid: true, expires at: 1763689446033
+[debug] [2025-11-21T01:14:51.868Z] Checked if tokens are valid: true, expires at: 1763689446033
+[debug] [2025-11-21T01:14:51.868Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/mathblitz-79f43:testIamPermissions [none]
+[debug] [2025-11-21T01:14:51.868Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/mathblitz-79f43:testIamPermissions x-goog-quota-user=projects/mathblitz-79f43
+[debug] [2025-11-21T01:14:51.868Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/mathblitz-79f43:testIamPermissions {"permissions":["firebase.projects.get","secretmanager.secrets.create","secretmanager.secrets.get","secretmanager.secrets.update","secretmanager.versions.add"]}
+[debug] [2025-11-21T01:14:52.051Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/mathblitz-79f43:testIamPermissions 200
+[debug] [2025-11-21T01:14:52.051Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/mathblitz-79f43:testIamPermissions {"permissions":["firebase.projects.get","secretmanager.secrets.create","secretmanager.secrets.get","secretmanager.secrets.update","secretmanager.versions.add"]}
+[debug] [2025-11-21T01:14:52.051Z] Checked if tokens are valid: true, expires at: 1763689446033
+[debug] [2025-11-21T01:14:52.051Z] Checked if tokens are valid: true, expires at: 1763689446033
+[debug] [2025-11-21T01:14:52.052Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/mathblitz-79f43 [none]
+[debug] [2025-11-21T01:14:52.139Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/mathblitz-79f43 200
+[debug] [2025-11-21T01:14:52.139Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/mathblitz-79f43 {"projectNumber":"792458951904","projectId":"mathblitz-79f43","lifecycleState":"ACTIVE","name":"mathblitz","labels":{"firebase":"enabled","firebase-core":"disabled"},"createTime":"2025-11-13T20:15:34.740637Z"}
+[debug] [2025-11-21T01:14:52.140Z] Checked if tokens are valid: true, expires at: 1763689446033
+[debug] [2025-11-21T01:14:52.140Z] Checked if tokens are valid: true, expires at: 1763689446033
+[debug] [2025-11-21T01:14:52.140Z] >>> [apiv2][query] GET https://secretmanager.googleapis.com/v1/projects/mathblitz-79f43/secrets/CK_ENV [none]
+[debug] [2025-11-21T01:14:52.341Z] <<< [apiv2][status] GET https://secretmanager.googleapis.com/v1/projects/mathblitz-79f43/secrets/CK_ENV 200
+[debug] [2025-11-21T01:14:52.341Z] <<< [apiv2][body] GET https://secretmanager.googleapis.com/v1/projects/mathblitz-79f43/secrets/CK_ENV {"name":"projects/792458951904/secrets/CK_ENV","replication":{"automatic":{}},"createTime":"2025-11-20T16:43:41.062139Z","labels":{"firebase-managed":"functions"},"etag":"\"16440a93528450\""}
+[debug] [2025-11-21T01:14:52.342Z] Checked if tokens are valid: true, expires at: 1763689446033
+[debug] [2025-11-21T01:14:52.342Z] Checked if tokens are valid: true, expires at: 1763689446033
+[debug] [2025-11-21T01:14:52.343Z] >>> [apiv2][query] POST https://secretmanager.googleapis.com/v1/projects/mathblitz-79f43/secrets/CK_ENV:addVersion [none]
+[debug] [2025-11-21T01:14:52.343Z] >>> [apiv2][body] POST https://secretmanager.googleapis.com/v1/projects/mathblitz-79f43/secrets/CK_ENV:addVersion {"payload":{"data":"ZGV2ZWxvcG1lbnQ="}}
+[debug] [2025-11-21T01:14:52.741Z] <<< [apiv2][status] POST https://secretmanager.googleapis.com/v1/projects/mathblitz-79f43/secrets/CK_ENV:addVersion 200
+[debug] [2025-11-21T01:14:52.741Z] <<< [apiv2][body] POST https://secretmanager.googleapis.com/v1/projects/mathblitz-79f43/secrets/CK_ENV:addVersion {"name":"projects/792458951904/secrets/CK_ENV/versions/7","createTime":"2025-11-21T01:14:52.725179Z","state":"ENABLED","replicationStatus":{"automatic":{}},"etag":"\"1644108a6b6bbb\""}
+[info] ✔  Created a new secret version projects/792458951904/secrets/CK_ENV/versions/7 
+[debug] [2025-11-21T01:14:52.742Z] Checked if tokens are valid: true, expires at: 1763689446033
+[debug] [2025-11-21T01:14:52.743Z] Checked if tokens are valid: true, expires at: 1763689446033
+[debug] [2025-11-21T01:14:52.743Z] >>> [apiv2][query] GET https://cloudfunctions.googleapis.com/v1/projects/mathblitz-79f43/locations/-/functions [none]

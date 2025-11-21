@@ -7,8 +7,8 @@ Scope: deliver player-facing leaderboard change notifications using CloudKit. Th
 - Keep CloudKit prepared: define record types, subscriptions, payload shape, and app glue needed to ship quickly after approval.
 
 ## Current State (baseline)
-- App registers for pushes via OneSignal and APNs in `MathBlitz/AppDelegate.swift`.
-- CloudKit entitlements are enabled for `iCloud.MathBlitz` (app + OneSignal extension).
+- App registers for pushes directly with APNs in `MathBlitz/AppDelegate.swift`.
+- CloudKit entitlements are enabled for `iCloud.MathBlitz`.
 - `TestGameStartNotifier` installs a `CKQuerySubscription` on record type `TestGameStart` in the public DB, posts a local notification on receipt, and respects a `DebugDefaults` flag. No production game/leaderboard notifications yet.
 
 ## Event Model & CloudKit Schema

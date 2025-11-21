@@ -1,27 +1,27 @@
-import OneSignalFramework
-import OneSignalNotifications
+import UserNotifications
 import UIKit
 
 final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         UNUserNotificationCenter.current().delegate = self
-        
-        // Remove this method to stop OneSignal from prompting for permission
-        OneSignal.Notifications.requestPermission({ accepted in
-            print("User accepted notifications: \(accepted)")
-            DispatchQueue.main.async {
-                application.registerForRemoteNotifications()
-            }
-        }, fallbackToSettings: true)
 
-        // OneSignal initialization
-        OneSignal.initialize("8db0ad86-6dbb-47c8-925c-7d6f49719ae1", withLaunchOptions: launchOptions)
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
+            if let error {
+                print("Notification authorization error: \(error.localizedDescription)")
+            }
+            if granted {
+                DispatchQueue.main.async {
+                    application.registerForRemoteNotifications()
+                }
+            } else {
+                print("Notification authorization not granted")
+            }
+        }
         return true
     }
     
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        OSNotificationsManager.didRegister(forRemoteNotifications: application, deviceToken: deviceToken)
         let token = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
 #if DEBUG
         print("APNs device token: \(token)")
@@ -45,7 +45,12 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     }
     
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: any Error) {
-        OSNotificationsManager.handleDidFailRegister(forRemoteNotification: error as NSError)
         print(error)
+    }
+
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                willPresent notification: UNNotification,
+                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler([.banner, .badge, .sound])
     }
 }

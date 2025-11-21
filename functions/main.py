@@ -262,8 +262,15 @@ def broadcast_cloudkit_message(request: https_fn.Request):
     if not message:
         return jsonify({"error": "message/body is required"}), 400
 
+    loaded_env = {
+        "CK_TEAM_ID": bool(TEAM_ID),
+        "CK_KEY_ID": bool(KEY_ID),
+        "CK_CONTAINER_ID": bool(CONTAINER),
+        "CK_PRIVATE_KEY": bool(PRIVATE_KEY),
+    }
+
     try:
         result = _broadcast_cloudkit_message(title=title, body=message, data=data)
-        return jsonify({"success": True, "cloudkit": result}), 200
+        return jsonify({"success": True, "cloudkit": result, "env": loaded_env}), 200
     except Exception as exc:  # noqa: BLE001
-        return jsonify({"error": str(exc)}), 500
+        return jsonify({"error": str(exc), "env": loaded_env}), 500
