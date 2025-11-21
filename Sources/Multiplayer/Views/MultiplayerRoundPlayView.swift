@@ -30,7 +30,12 @@ struct MultiplayerRoundPlayView: View {
             ZStack(alignment: .topLeading) {
                 VStack(spacing: 10) {
                     Spacer()
-                    questionSection(for: geo.size)
+                    Text("\(round.problem.a) × \(round.problem.b) =")
+                        .font(.bobaland(size: 56))
+                        .foregroundColor(.white)
+                        .minimumScaleFactor(0.7)
+                        .lineLimit(1)
+                    
                     VStack {
                         countdownClock
                         Spacer()
@@ -39,11 +44,7 @@ struct MultiplayerRoundPlayView: View {
                             .padding(.bottom, 16)
 
                         NumpadView(
-                            buttonSize: 80,
-                            digitFontSize: 44,
-                            symbolFontSize: 28,
-                            verticalSpacing: 12,
-                            horizontalSpacing: 12,
+                            userAnswer: $userAnswer,
                             backgroundForButton: { _, isEnabled in
                                 if numpadFlash {
                                     return Color.red.opacity(0.6)
@@ -58,6 +59,8 @@ struct MultiplayerRoundPlayView: View {
                                 handleNumpadPress(value: value)
                             }
                         )
+                        .frame(maxWidth: UIDevice.current.userInterfaceIdiom == .pad ? nil : 400,
+                               height: UIDevice.current.userInterfaceIdiom == .pad ? nil : geo.size.height / 3)
                         .offset(x: numpadShake)
                     }
                     .padding(.bottom, geo.safeAreaInsets.bottom + 24)
@@ -118,30 +121,6 @@ struct MultiplayerRoundPlayView: View {
         }
     }
     
-    private func questionSection(for size: CGSize) -> some View {
-        let shortestSide = min(size.width, size.height)
-        let promptSize = max(56, shortestSide * 0.12)
-        let answerSize = max(72, shortestSide * 0.16)
-        let answerText = userAnswer.isEmpty ? "?" : userAnswer
-        
-        return HStack(alignment: .bottom, spacing: 16) {
-            Text("\(round.problem.a) × \(round.problem.b) =")
-                .font(.bobaland(size: promptSize))
-                .foregroundColor(.white)
-                .minimumScaleFactor(0.7)
-                .lineLimit(1)
-            
-            Text(answerText)
-                .font(.bobaland(size: answerSize))
-                .foregroundColor(isLocked ? .gray : .cyan)
-                .minimumScaleFactor(0.5)
-                .lineLimit(1)
-                .offset(x: screenShake)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, 12)
-    }
-    
     private func handleNumpadPress(value: String) {
         guard !(isLocked || hasSubmittedThisQuestion) else { return }
         if value == "⌫" {
@@ -152,13 +131,12 @@ struct MultiplayerRoundPlayView: View {
             userAnswer = ""
         } else {
             userAnswer += value
-            if let answerInt = Int(userAnswer) {
-                if answerInt == round.problem.answer {
-                    submit(answer: answerInt, correct: true)
-                } else if userAnswer.count >= String(round.problem.answer).count {
-                    submit(answer: answerInt, correct: false)
-                }
-            }
+        }
+        
+        if let answerInt = Int(userAnswer), answerInt == round.problem.answer {
+            submit(answer: answerInt, correct: true)
+        } else if let answerInt = Int(userAnswer), userAnswer.count >= String(round.problem.answer).count {
+            submit(answer: answerInt, correct: false)
         }
     }
     

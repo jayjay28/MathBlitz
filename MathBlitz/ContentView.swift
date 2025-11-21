@@ -15,53 +15,7 @@ struct ContentView: View {
     @State private var showingLeaderboard = false
     
     var body: some View {
-        Group {
-            switch appState.flow {
-            case .loading:
-                LoadingView()
-            case .onboarding:
-                OnboardingView(onComplete: appState.completeOnboarding)
-            case .gameplay:
-                GameSceneView(
-                    viewModel: gameViewModel,
-                    onSettingsTapped: { showingSettings = true },
-                    onLeaderboardTapped: { showingLeaderboard = true },
-                    onMultiplayerTapped: { appState.presentMultiplayerSetup() }
-                )
-                .sheet(isPresented: $showingSettings) {
-                    if let profile = appState.profile {
-                        SettingsView(profile: profile,
-                                     onSave: { updated in
-                                         appState.updateProfile(updated)
-                                         gameViewModel.updateGameMode(updated.preferredMode)
-                                     },
-                                     onSignOut: {
-                                         showingSettings = false
-                                         appState.signOut()
-                                     })
-                        .presentationDetents([.medium, .large])
-                    }
-                }
-                .sheet(isPresented: $showingLeaderboard) {
-                    LeaderboardView(viewModel: leaderboardViewModel)
-                }
-            case let .multiplayerSetup(code):
-                MultiplayerSessionSetupView(
-                    initialCode: code,
-                    onHost: { code in
-                        let mode = appState.profile?.preferredMode ?? .kids
-                        appState.hostMultiplayerSession(code: code, mode: mode)
-                    },
-                    onJoin: { appState.joinMultiplayerSession(code: $0) },
-                    onCancel: { appState.cancelMultiplayerSetup() }
-                )
-            case let .multiplayer(gameId, isHost):
-                MultiplayerGameView(gameId: gameId,
-                                    isHost: isHost,
-                                    onExit: { appState.exitMultiplayer() })
-                    .environmentObject(appState)
-            }
-        }
+        mainContent
         .onAppear {
             FlowLogger.trace("ContentView appeared with flow \(appState.flow)")
             if let mode = appState.profile?.preferredMode {
@@ -89,6 +43,8 @@ struct ContentView: View {
                              })
                     .padding(.top, 16)
                     .transition(.move(edge: .top).combined(with: .opacity))
+            } else {
+                EmptyView()
             }
         }
         .onChange(of: appState.toastMessage) { message in
@@ -105,6 +61,66 @@ struct ContentView: View {
     }
 }
 
+private extension ContentView {
+    @ViewBuilder
+    var mainContent: some View {
+        switch self.appState.flow {
+        case .loading:
+            LoadingView()
+        case .onboarding:
+            OnboardingView(onComplete: self.appState.completeOnboarding)
+        case .gameplay:
+            ZStack(alignment: .topTrailing) {
+                GameSceneView(
+                    viewModel: gameViewModel,
+                    onSettingsTapped: { showingSettings = true },
+                    onLeaderboardTapped: { showingLeaderboard = true },
+                    onMultiplayerTapped: { self.appState.presentMultiplayerSetup() }
+                )
+                OnlinePresenceBadge(count: self.appState.onlinePlayerCount)
+                    .padding(.top, 16)
+                    .padding(.trailing, 16)
+            }
+            .sheet(isPresented: $showingSettings) {
+                if let profile = self.appState.profile {
+                    SettingsView(profile: profile,
+                                 onSave: { updated in
+                                     self.appState.updateProfile(updated)
+                                     gameViewModel.updateGameMode(updated.preferredMode)
+                                 },
+                                 onSignOut: {
+                                     showingSettings = false
+                                     self.appState.signOut()
+                                 })
+                    .presentationDetents([.medium, .large])
+                } else {
+                    EmptyView()
+                }
+            }
+            .sheet(isPresented: $showingLeaderboard) {
+                LeaderboardView(viewModel: leaderboardViewModel)
+            }
+        case let .multiplayerSetup(code):
+            MultiplayerSessionSetupView(
+                initialCode: code,
+                onHost: { code in
+                    let mode = self.appState.profile?.preferredMode ?? .kids
+                    self.appState.hostMultiplayerSession(code: code, mode: mode)
+                },
+                onJoin: { self.appState.joinMultiplayerSession(code: $0) },
+                onCancel: { self.appState.cancelMultiplayerSetup() }
+            )
+        case let .multiplayer(gameId, isHost):
+            MultiplayerGameView(
+                gameId: gameId,
+                isHost: isHost,
+                onExit: { self.appState.exitMultiplayer() }
+            )
+            .environmentObject(appState)
+        }
+    }
+}
+
 private struct ToastBanner: View {
     let message: String
     
@@ -117,6 +133,30 @@ private struct ToastBanner: View {
             .foregroundColor(.white)
             .clipShape(Capsule())
             .shadow(radius: 10)
+    }
+}
+
+private struct OnlinePresenceBadge: View {
+    let count: Int
+    
+    private var labelText: String {
+        count == 1 ? "1 player online" : "\(count) players online"
+    }
+    
+    var body: some View {
+        Label {
+            Text(labelText)
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+        } icon: {
+            Image(systemName: "person.3.fill")
+                .font(.system(size: 14, weight: .semibold))
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(Color.black.opacity(0.55))
+        .foregroundColor(.white)
+        .clipShape(Capsule())
+        .shadow(radius: 8)
     }
 }
 

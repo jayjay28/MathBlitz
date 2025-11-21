@@ -14,6 +14,7 @@ struct PlayerProfile: Equatable, Codable, Identifiable {
     var createdAt: Date
     var updatedAt: Date
     private var preferredModeRaw: String?
+    var alertClyonGameStart: Bool
     
     init(
         id: String,
@@ -21,7 +22,8 @@ struct PlayerProfile: Equatable, Codable, Identifiable {
         emojitar: Emojitar,
         createdAt: Date,
         updatedAt: Date,
-        preferredModeRaw: String? = nil
+        preferredModeRaw: String? = nil,
+        alertClyonGameStart: Bool = false
     ) {
         self.id = id
         self.displayName = displayName
@@ -29,6 +31,7 @@ struct PlayerProfile: Equatable, Codable, Identifiable {
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.preferredModeRaw = preferredModeRaw
+        self.alertClyonGameStart = alertClyonGameStart
     }
     
     var preferredMode: GameMode {
@@ -56,7 +59,8 @@ extension PlayerProfile {
             emojitar: emojitar,
             createdAt: createdAt,
             updatedAt: createdAt,
-            preferredModeRaw: mode.rawValue
+            preferredModeRaw: mode.rawValue,
+            alertClyonGameStart: false
         )
     }
 }

@@ -12,9 +12,27 @@ service cloud.firestore {
     match /profiles/{playerId} {
       allow read, write: if isSelf(playerId);
     }
+    
+    match /profiles/{playerId}/deviceTokens/{tokenId} {
+      allow read, write: if isSelf(playerId);
+    }
 
     match /leaderboards/{mode}/entries/{playerId} {
       allow read: if true;
+      allow write: if isSelf(playerId) &&
+        ('score' in request.resource.data) &&
+        (request.resource.data.score is int) &&
+        ('playerId' in request.resource.data) &&
+        request.resource.data.playerId == playerId &&
+        (
+          resource == null ||
+          !('score' in resource.data) ||
+          request.resource.data.score >= resource.data.score
+        );
+    }
+    
+    match /presence/{playerId} {
+      allow read: if isSignedIn();
       allow write: if isSelf(playerId);
     }
 

@@ -1,0 +1,70 @@
+2025-11-20 18:56:12,768 DEBUG    root            Loaded Command Group: ['gcloud', 'functions']
+2025-11-20 18:56:12,856 DEBUG    root            Loaded Command Group: ['gcloud', 'functions', 'describe']
+2025-11-20 18:56:12,864 DEBUG    root            Running [gcloud.functions.describe] with arguments: [--gen2: "true", --region: "us-central1", NAME: "broadcast_cloudkit_message"]
+2025-11-20 18:56:12,866 DEBUG    root            (gcloud.functions.describe) You do not currently have an active account selected.
+Please run:
+
+  $ gcloud auth login
+
+to obtain new credentials.
+
+If you have already logged in with a different account, run:
+
+  $ gcloud config set account ACCOUNT
+
+to select an already authenticated account to use.
+Traceback (most recent call last):
+  File "/opt/homebrew/Caskroom/gcloud-cli/547.0.0/google-cloud-sdk/lib/googlecloudsdk/calliope/cli.py", line 944, in Execute
+    resources = calliope_command.Run(cli=self, args=args)
+  File "/opt/homebrew/Caskroom/gcloud-cli/547.0.0/google-cloud-sdk/lib/googlecloudsdk/calliope/backend.py", line 955, in Run
+    resources = command_instance.Run(args)
+  File "/opt/homebrew/Caskroom/gcloud-cli/547.0.0/google-cloud-sdk/lib/surface/functions/describe.py", line 103, in Run
+    return util.FunctionResourceCommand.Run(self, args)
+  File "/opt/homebrew/Caskroom/gcloud-cli/547.0.0/google-cloud-sdk/lib/googlecloudsdk/api_lib/functions/v1/util.py", line 387, in CatchHTTPErrorRaiseHTTPExceptionFn
+    return func(*args, **kwargs)
+  File "/opt/homebrew/Caskroom/gcloud-cli/547.0.0/google-cloud-sdk/lib/googlecloudsdk/command_lib/functions/util.py", line 70, in Run
+    return self._RunV2(args)
+  File "/opt/homebrew/Caskroom/gcloud-cli/547.0.0/google-cloud-sdk/lib/surface/functions/describe.py", line 89, in _RunV2
+    client = client_v2.FunctionsClient(self.ReleaseTrack())
+  File "/opt/homebrew/Caskroom/gcloud-cli/547.0.0/google-cloud-sdk/lib/googlecloudsdk/api_lib/functions/v2/client.py", line 36, in __init__
+    self.client = util.GetClientInstance(release_track)
+  File "/opt/homebrew/Caskroom/gcloud-cli/547.0.0/google-cloud-sdk/lib/googlecloudsdk/api_lib/functions/v2/util.py", line 157, in GetClientInstance
+    return apis.GetClientInstance(_API_NAME, api_version)
+  File "/opt/homebrew/Caskroom/gcloud-cli/547.0.0/google-cloud-sdk/lib/googlecloudsdk/api_lib/util/apis.py", line 278, in GetClientInstance
+    return apis_internal._GetClientInstance(
+  File "/opt/homebrew/Caskroom/gcloud-cli/547.0.0/google-cloud-sdk/lib/googlecloudsdk/api_lib/util/apis_internal.py", line 169, in _GetClientInstance
+    http_client = transports.GetApitoolsTransport(
+  File "/opt/homebrew/Caskroom/gcloud-cli/547.0.0/google-cloud-sdk/lib/googlecloudsdk/core/credentials/transports.py", line 80, in GetApitoolsTransport
+    session = requests.GetSession(
+  File "/opt/homebrew/Caskroom/gcloud-cli/547.0.0/google-cloud-sdk/lib/googlecloudsdk/core/credentials/requests.py", line 85, in GetSession
+    credentials = store.LoadIfEnabled(
+  File "/opt/homebrew/Caskroom/gcloud-cli/547.0.0/google-cloud-sdk/lib/googlecloudsdk/core/credentials/store.py", line 636, in LoadIfEnabled
+    return Load(
+  File "/opt/homebrew/Caskroom/gcloud-cli/547.0.0/google-cloud-sdk/lib/googlecloudsdk/core/credentials/store.py", line 876, in Load
+    cred = _Load(
+  File "/opt/homebrew/Caskroom/gcloud-cli/547.0.0/google-cloud-sdk/lib/googlecloudsdk/core/credentials/store.py", line 1058, in _Load
+    raise creds_exceptions.NoActiveAccountException(
+googlecloudsdk.core.credentials.exceptions.NoActiveAccountException: You do not currently have an active account selected.
+Please run:
+
+  $ gcloud auth login
+
+to obtain new credentials.
+
+If you have already logged in with a different account, run:
+
+  $ gcloud config set account ACCOUNT
+
+to select an already authenticated account to use.
+2025-11-20 18:56:12,872 ERROR    root            (gcloud.functions.describe) You do not currently have an active account selected.
+Please run:
+
+  $ gcloud auth login
+
+to obtain new credentials.
+
+If you have already logged in with a different account, run:
+
+  $ gcloud config set account ACCOUNT
+
+to select an already authenticated account to use.

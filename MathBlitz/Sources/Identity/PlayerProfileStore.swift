@@ -134,7 +134,8 @@ final class PlayerProfileStore: ObservableObject {
             "colorHex": profile.emojitar.colorHex,
             "preferredMode": profile.preferredMode.rawValue,
             "createdAt": Timestamp(date: profile.createdAt),
-            "updatedAt": Timestamp(date: profile.updatedAt)
+            "updatedAt": Timestamp(date: profile.updatedAt),
+            "alertClyonGameStart": profile.alertClyonGameStart
         ]
         
         try await db.collection("profiles")
@@ -167,7 +168,8 @@ final class PlayerProfileStore: ObservableObject {
             emojitar: Emojitar(emoji: emoji, colorHex: colorHex),
             createdAt: createdAt,
             updatedAt: updatedAt,
-            preferredModeRaw: data["preferredMode"] as? String
+            preferredModeRaw: data["preferredMode"] as? String,
+            alertClyonGameStart: data["alertClyonGameStart"] as? Bool ?? false
         )
         
         return profile

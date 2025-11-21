@@ -2,17 +2,15 @@
 //  FlowLogger.swift
 //  MathBlitz
 //
-//  Created by ChatGPT on 11/11/25.
+//  Created by Clyon Jackson on 11/10/25.
 //
 
 import Foundation
 
-enum FlowLogger {
-    static func trace(_ message: @autoclosure () -> String) {
-#if DEBUG
-        print("🌀 Flow:", message())
-#endif
+struct FlowLogger {
+    static func trace(_ message: String) {
+        #if DEBUG
+        print(message)
+        #endif
     }
 }
-
-

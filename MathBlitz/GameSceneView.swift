@@ -117,53 +117,64 @@ struct GameSceneView: View {
         }
         .animation(.spring(), value: viewModel.showPlacementToast)
         .animation(.spring(response: 0.5, dampingFraction: 0.8), value: isMenuOpen)
+        .onDeviceShake(perform: handleUserRequestedQuit)
     }
 
     private var gameBody: some View {
         GeometryReader { geo in
             ZStack(alignment: .top) {
+                Spacer()
                 VStack(spacing: 10) {
-                    Spacer(minLength: 20)
-                    
-                    questionSection(for: geo.size)
-                    
-                    Spacer(minLength: 20)
-                    
                     VStack(spacing: 12) {
                         
-                        livesSection
-                        HStack {
-                            countdownClock
-                            ScoreAndBestView(currentScore: viewModel.score, highScore: viewModel.highScore, sizeClass: sizeClass)
-                                .offset(x: scoreShakeOffset)
-                                .onChange(of: viewModel.triggerHighScoreShake) { trigger in
-                                    if trigger {
-                                        shakeScoreView()
-                                    }
+                        VStack(spacing: 12) {
+                            HStack {
+                                VStack {
+                                    countdownClock
+                                    livesSection
+                                    Text("\(viewModel.currentProblem.a) × \(viewModel.currentProblem.b) =")
+                                        .font(.bobaland(size: promptFontSize))
+                                        .foregroundColor(.white)
+                                        .allowsTightening(true)
+                                        .minimumScaleFactor(0.5)
+                                        .lineLimit(1)
+                                    
                                 }
-                        }
-                        
-                        NumpadView(
-                            buttonSize: numpadButtonSize,
-                            digitFontSize: numpadFontSize,
-                            symbolFontSize: numpadSymbolFontSize,
-                            verticalSpacing: 10,
-                            horizontalSpacing: 10,
-                            isButtonEnabled: { _ in viewModel.isGameActive },
-                            onDisabledPress: {
-                                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                                SoundEffectPlayer.shared.playBlocked()
-                            },
-                            onPress: { value in
-                                viewModel.handleNumpadPress(value: value)
+                                ScoreAndBestView(currentScore: viewModel.score, highScore: viewModel.highScore, sizeClass: sizeClass)
+                                    .offset(x: scoreShakeOffset)
+                                    .onChange(of: viewModel.triggerHighScoreShake) { trigger in
+                                        if trigger {
+                                            shakeScoreView()
+                                        }
+                                    }
                             }
-                        )
-                        
-                        if shouldShowSkillLabEndButton {
-                            skillLabEndButton
-                                .padding(.top, 4)
+                            
+                            Spacer(minLength: 0)
+                            
+                            VStack(spacing: 8) {
+                                NumpadView(
+                                    userAnswer: $viewModel.userAnswer,
+                                    isButtonEnabled: { _ in viewModel.isGameActive },
+                                    onDisabledPress: {
+                                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                                        SoundEffectPlayer.shared.playBlocked()
+                                    },
+                                    onPress: { value in
+                                        viewModel.handleNumpadPress(value: value)
+                                    }
+                                )
+                                .frame(maxWidth: UIDevice.current.userInterfaceIdiom == .pad ? nil : 400)
+                                .frame(height: UIDevice.current.userInterfaceIdiom == .pad ? nil : geo.size.height / 3)
+                                
+                                if shouldShowSkillLabEndButton {
+                                    skillLabEndButton
+                                        .padding(.top, 4)
+                                }
+                            }
                         }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                     .padding(.bottom, geo.safeAreaInsets.bottom + 20)
                 }
                 .padding(.horizontal, mainHorizontalPadding)
@@ -200,6 +211,7 @@ struct GameSceneView: View {
                 }
             }
         }
+        .onTwoFingerSwipeDown(perform: handleUserRequestedQuit)
     }
     
     // MARK: - Adaptive Properties
@@ -208,14 +220,15 @@ struct GameSceneView: View {
     
     private var mainHorizontalPadding: CGFloat { isRegularSizeClass ? 80 : 32 }
     private var promptFontSize: CGFloat { isRegularSizeClass ? 90 : 56 }
-    private var answerFontSize: CGFloat { isRegularSizeClass ? 110 : 72 }
     private var countdownClockSize: CGFloat { isRegularSizeClass ? 72 : 58 }
     private var countdownClockFontSize: CGFloat { isRegularSizeClass ? 32 : 22 }
     private var lifeMeterHeartSize: CGFloat { isRegularSizeClass ? 20 : 14 }
-    
-    private var numpadButtonSize: CGFloat { isRegularSizeClass ? 80 : 65 }
-    private var numpadFontSize: CGFloat { isRegularSizeClass ? 44 : 36 }
-    private var numpadSymbolFontSize: CGFloat { isRegularSizeClass ? 28 : 24 }
+
+    private func handleUserRequestedQuit() {
+        guard viewModel.isGameActive else { return }
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        viewModel.quitGame()
+    }
 
     private var skillLabEndButton: some View {
         Button(action: viewModel.quitGame) {
@@ -322,33 +335,6 @@ struct GameSceneView: View {
     }
     
     
-    @ViewBuilder
-    private func questionSection(for size: CGSize) -> some View {
-        let answerText = viewModel.userAnswer.isEmpty ? "?" : viewModel.userAnswer
-        
-        VStack(spacing: 16) {
-            Text("\(viewModel.currentProblem.a) × \(viewModel.currentProblem.b) =")
-                .font(.bobaland(size: promptFontSize))
-                .foregroundColor(.white)
-                .allowsTightening(true)
-                .minimumScaleFactor(0.5)
-                .lineLimit(1)
-            
-            Text(answerText)
-                .font(.bobaland(size: answerFontSize))
-                .foregroundColor(viewModel.backgroundPhase == .failure ? .white : .white)
-                .allowsTightening(true)
-                .minimumScaleFactor(0.4)
-                .lineLimit(1)
-                .modifier(AnswerShakeModifier(phase: viewModel.backgroundPhase))
-                .opacity(viewModel.backgroundPhase == .success ? 0 : 1)
-                .animation(.easeInOut(duration: viewModel.backgroundPhase == .success ? 0.3 : 0.0),
-                           value: viewModel.backgroundPhase == .success)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, 12)
-    }
-    
     private var livesSection: some View {
         VStack(spacing: 8) {
             Text("LIVES")
@@ -417,13 +403,14 @@ struct ScoreAndBestView: View {
     private var valueSize: CGFloat { isRegularSizeClass ? 36 : 28 }
 
     var body: some View {
-        HStack(spacing: 8) {
-            if highScore <= 0 { Spacer() }
+        VStack(spacing: 4) {
+            if highScore > 0 {
+                Text("BEST: \(highScore)")
+                    .font(.system(size: labelSize, weight: .bold, design: .rounded))
+                    .foregroundColor(.white.opacity(0.7))
+            }
 
-            Text("SCORE:")
-                .font(.system(size: labelSize, weight: .bold, design: .rounded))
-                .foregroundColor(.white.opacity(0.7))
-            Text("\(currentScore)")
+            Text("SCORE: \(currentScore)")
                 .font(.bobaland(size: valueSize))
                 .foregroundColor(.white)
                 .scaleEffect(isAnimating ? 1.3 : 1.0)
@@ -438,21 +425,6 @@ struct ScoreAndBestView: View {
                         }
                     }
                 }
-
-            if highScore > 0 {
-                Text("|")
-                    .font(.system(size: labelSize, weight: .bold, design: .rounded))
-                    .foregroundColor(.white.opacity(0.5))
-
-                Text("BEST:")
-                    .font(.system(size: labelSize, weight: .bold, design: .rounded))
-                    .foregroundColor(.white.opacity(0.7))
-                Text("\(highScore)")
-                    .font(.bobaland(size: valueSize))
-                    .foregroundColor(.white)
-            }
-
-            if highScore <= 0 { Spacer() }
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 10)
@@ -482,7 +454,7 @@ struct MiniLeaderboardView: View {
     let entries: [LeaderboardEntry]
     
     var body: some View {
-        VStack(alignment: .center, spacing: 10) {
+        VStack(alignment: .leading, spacing: 10) {
             Text("Leaderboard")
                 .font(.system(size: 14, weight: .semibold, design: .rounded))
                 .foregroundColor(.white.opacity(0.9))
@@ -491,13 +463,14 @@ struct MiniLeaderboardView: View {
                 Text("Be the first to score!")
                     .font(.system(size: 14, weight: .medium, design: .rounded))
                     .foregroundColor(.white.opacity(0.7))
+                    .frame(maxWidth: .infinity, alignment: .leading)
             } else {
                 ForEach(Array(entries.prefix(10).enumerated()), id: \.element.id) { index, entry in
                     HStack(spacing: 16) {
                         Text("#\(index + 1)")
                             .font(.bobaland(size: 24))
                             .foregroundColor(.white)
-                        VStack(alignment: .center) {
+                        VStack(alignment: .leading) {
                             Text(entry.displayName)
                                 .font(.system(size: 15, weight: .semibold, design: .rounded))
                             Text("\(entry.score) pts")
@@ -506,10 +479,12 @@ struct MiniLeaderboardView: View {
                         }
                     }
                     .padding(.vertical, 6)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
         }
         .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
         // Removed background
     }
 }
@@ -592,11 +567,6 @@ struct SideMenuView: View {
                                action: onMultiplayer)
                 
                 Spacer()
-                
-                Text("“What can I remove to make this better?”")
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
-                    .foregroundColor(.white.opacity(0.7))
-                    .padding(.top, 32)
             }
             .padding(.top, 80)
             .padding(.bottom, 40)
@@ -676,9 +646,11 @@ private struct PostGameView: View {
                     .font(.bobaland(size: 90))
                     .foregroundColor(.white)
                 
-                MiniLeaderboardView(entries: leaderboardEntries)
-                    .padding(.horizontal, 40)
-                    .padding(.top, 20)
+                ScrollView {
+                    MiniLeaderboardView(entries: leaderboardEntries)
+                        .padding(.horizontal, 40)
+                }
+                .padding(.top, 20)
                 
                 Spacer()
                 
@@ -818,5 +790,95 @@ struct HighScoreCelebrationView: View {
         .onAppear {
             animate = true
         }
+    }
+}
+
+// MARK: - Gesture Helpers
+
+private struct TwoFingerSwipeDownCaptureView: UIViewRepresentable {
+    let action: () -> Void
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(action: action)
+    }
+    
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView(frame: .zero)
+        view.backgroundColor = .clear
+        view.isUserInteractionEnabled = true
+        
+        let recognizer = UISwipeGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleSwipe(_:)))
+        recognizer.direction = .down
+        recognizer.numberOfTouchesRequired = 2
+        recognizer.cancelsTouchesInView = false
+        view.addGestureRecognizer(recognizer)
+        
+        return view
+    }
+    
+    func updateUIView(_ uiView: UIView, context: Context) {}
+    
+    final class Coordinator: NSObject {
+        private let action: () -> Void
+        
+        init(action: @escaping () -> Void) {
+            self.action = action
+        }
+        
+        @objc func handleSwipe(_ recognizer: UISwipeGestureRecognizer) {
+            guard recognizer.state == .ended else { return }
+            action()
+        }
+    }
+}
+
+private struct TwoFingerSwipeDownModifier: ViewModifier {
+    let action: () -> Void
+    
+    func body(content: Content) -> some View {
+        content.background(TwoFingerSwipeDownCaptureView(action: action))
+    }
+}
+
+private struct DeviceShakeViewModifier: ViewModifier {
+    let action: () -> Void
+    
+    func body(content: Content) -> some View {
+        content.onReceive(NotificationCenter.default.publisher(for: .deviceDidShake)) { _ in
+            action()
+        }
+    }
+}
+
+extension View {
+    func onTwoFingerSwipeDown(perform action: @escaping () -> Void) -> some View {
+        modifier(TwoFingerSwipeDownModifier(action: action))
+    }
+    
+    func onDeviceShake(perform action: @escaping () -> Void) -> some View {
+        modifier(DeviceShakeViewModifier(action: action))
+    }
+}
+
+extension Notification.Name {
+    static let deviceDidShake = Notification.Name("deviceDidShakeNotification")
+}
+
+extension UIWindow {
+    open override func motionEnded(_ motion: UIEvent.EventSubtype, with event: UIEvent?) {
+        super.motionEnded(motion, with: event)
+        guard motion == .motionShake else { return }
+        NotificationCenter.default.post(name: .deviceDidShake, object: nil)
+    }
+}
+
+struct GameSceneView_Previews: PreviewProvider {
+    static var previews: some View {
+        GameSceneView(
+            viewModel: GameViewModel(),
+            onSettingsTapped: {},
+            onLeaderboardTapped: {},
+            onMultiplayerTapped: {}
+        )
     }
 }

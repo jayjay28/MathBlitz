@@ -23,9 +23,11 @@ final class AppState: ObservableObject {
     @Published var profile: PlayerProfile?
     @Published var toastMessage: String?
     @Published var invites: [MultiplayerInvite] = []
+    @Published var onlinePlayerCount: Int = 0
     
     private let profileStore = PlayerProfileStore.shared
     private let inviteService = InviteService.shared
+    private let presenceService = PresenceService.shared
     private var cancellables: Set<AnyCancellable> = []
     private var pendingMultiplayerCode: String = SessionCodeGenerator.newCode()
     
@@ -35,6 +37,7 @@ final class AppState: ObservableObject {
             .receive(on: RunLoop.main)
             .sink { [weak self] profile in
                 self?.profile = profile
+                self?.handleProfileChange(profile)
             }
             .store(in: &cancellables)
         
@@ -53,6 +56,23 @@ final class AppState: ObservableObject {
             }
             .store(in: &cancellables)
         
+        presenceService.$onlineCount
+            .receive(on: RunLoop.main)
+            .sink { [weak self] count in
+                self?.onlinePlayerCount = count
+            }
+            .store(in: &cancellables)
+        
+        if DebugDefaults.isTestGameStartNotifierEnabled {
+            NotificationCenter.default.publisher(for: .testGameStartBroadcastReceived)
+                .compactMap { $0.object as? TestGameStartEvent }
+                .receive(on: RunLoop.main)
+                .sink { [weak self] event in
+                    self?.toastMessage = "Test mode: \(event.playerName) started \(event.mode.displayName)"
+                }
+                .store(in: &cancellables)
+        }
+        
         Task { await initializeFlow() }
     }
     
@@ -60,6 +80,7 @@ final class AppState: ObservableObject {
         self.profile = previewProfile
         self.flow = initialFlow
         FlowLogger.trace("AppState preview init → \(previewProfile.displayName)")
+        handleProfileChange(previewProfile)
     }
     
     func completeOnboarding(displayName: String, emojitar: Emojitar, mode: GameMode) {
@@ -105,6 +126,7 @@ final class AppState: ObservableObject {
         }
         profileStore.clear()
         profile = nil
+        presenceService.stopTracking()
         flow = .loading
         inviteService.stopListening()
         Task {
@@ -125,6 +147,7 @@ final class AppState: ObservableObject {
             if let storedProfile = profileStore.profile,
                let userId = Auth.auth().currentUser?.uid {
                 profile = storedProfile
+                handleProfileChange(storedProfile)
                 inviteService.startListening(for: userId)
                 flow = .gameplay
                 FlowLogger.trace("Profile restored → gameplay")
@@ -200,5 +223,16 @@ final class AppState: ObservableObject {
 #else
         return false
 #endif
+    }
+    
+    private func handleProfileChange(_ profile: PlayerProfile?) {
+        let wantsAlerts = DebugDefaults.isTestGameStartNotifierEnabled && (profile?.alertClyonGameStart ?? false)
+        TestGameStartNotifier.shared.updateSubscriptionState(enabled: wantsAlerts)
+        CloudKitNotificationManager.shared.updateSubscription(for: profile)
+        guard let profile else {
+            presenceService.stopTracking()
+            return
+        }
+        presenceService.startTracking(profile: profile)
     }
 }

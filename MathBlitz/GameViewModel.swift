@@ -238,6 +238,7 @@ var isMultiplayerContext: Bool = false
         userAnswer = ""
         newRound()
         FlowLogger.trace("Game reset → mode \(gameMode.rawValue), high score \(highScore)")
+        TestGameStartNotifier.shared.broadcastGameStart(mode: gameMode)
     }
     
     func prepareForManualRestart() {

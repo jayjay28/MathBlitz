@@ -1,2 +1,5 @@
-firebase-functions
-firebase-admin
+firebase-functions>=0.1.5
+firebase-admin>=6.5.0
+requests>=2.31.0
+pyjwt[crypto]>=2.8.0
+functions-framework>=3.5.0

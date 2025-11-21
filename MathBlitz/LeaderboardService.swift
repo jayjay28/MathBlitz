@@ -21,6 +21,16 @@ final class LeaderboardService {
         guard score > 0 else { return }
         
         let user = try await ensureUser()
+        let docRef = collection(for: mode).document(user.uid)
+        let existingSnapshot = try? await docRef.getDocument()
+        if
+            let data = existingSnapshot?.data(),
+            let currentBest = data["score"] as? Int,
+            currentBest >= score
+        {
+            return
+        }
+        
         let displayName = await resolvedDisplayName()
         let now = Date()
         
@@ -32,9 +42,7 @@ final class LeaderboardService {
             "updatedAt": Timestamp(date: now)
         ]
         
-        try await collection(for: mode)
-            .document(user.uid)
-            .setData(payload, merge: true)
+        try await docRef.setData(payload, merge: true)
     }
     
     func fetchTopEntries(mode: GameMode, limit: Int = 10) async throws -> [LeaderboardEntry] {
