@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 import time
@@ -6,15 +7,24 @@ from typing import Any, Dict, Optional
 import jwt
 import requests
 from flask import jsonify
-from firebase_admin import initialize_app
+from firebase_admin import initialize_app, firestore
 from firebase_functions import firestore_fn, https_fn
 from firebase_functions.firestore_fn import Change, DocumentSnapshot
+
+from apns_sender import APNsSender
 
 # Initialize Firebase Admin once per instance (safe when imported multiple times).
 try:
     initialize_app()
 except ValueError:
     pass
+
+# Initialize APNsSender
+try:
+    apns_sender = APNsSender()
+except ValueError as e:
+    print(f"Failed to initialize APNsSender: {e}")
+    apns_sender = None
 
 
 def _load_private_key() -> str:
@@ -61,6 +71,9 @@ def _snapshot_fields(snapshot: Optional[DocumentSnapshot]) -> Dict[str, Any]:
 @firestore_fn.on_document_written(document="leaderboards/{boardId}/entries/{playerId}")
 def on_leaderboard_standing_change(event: firestore_fn.Event[Change[DocumentSnapshot | None]]):
     """
+    DEPRECATED: This function uses CloudKit to send leaderboard updates.
+    It is replaced by direct APNs notifications.
+
     Trigger: Firestore document write at leaderboards/{boardId}/entries/{playerId}
     """
     after_fields = _snapshot_fields(event.data.after)
@@ -135,6 +148,9 @@ def on_leaderboard_standing_change(event: firestore_fn.Event[Change[DocumentSnap
 @https_fn.on_request()
 def send_test_leaderboard_push(request: https_fn.Request):
     """
+    DEPRECATED: This function uses CloudKit to send a test leaderboard push.
+    It is replaced by direct APNs notifications.
+
     HTTP helper to send a test leaderboard push via CloudKit.
     Body (JSON):
       {
@@ -247,6 +263,9 @@ def _broadcast_cloudkit_message(title: str, body: str, data: Optional[Dict[str, 
 @https_fn.on_request()
 def broadcast_cloudkit_message(request: https_fn.Request):
     """
+    DEPRECATED: This function uses CloudKit to broadcast messages.
+    It is replaced by direct APNs notifications.
+
     Broadcast to all CloudKit subscribers by writing a BroadcastMessage record.
     Body (JSON): {"title": "...", "message": "...", "data": {...}}
     """
@@ -274,3 +293,75 @@ def broadcast_cloudkit_message(request: https_fn.Request):
         return jsonify({"success": True, "cloudkit": result, "env": loaded_env}), 200
     except Exception as exc:  # noqa: BLE001
         return jsonify({"error": str(exc), "env": loaded_env}), 500
+
+
+@https_fn.on_request()
+async def send_direct_notification(request: https_fn.Request):
+    """
+    Send a direct push notification to a single device.
+    Body (JSON): {"token": "...", "title": "...", "body": "..."}
+    """
+    if not apns_sender:
+        return jsonify({"error": "APNsSender not initialized"}), 500
+
+    try:
+        body = request.get_json(force=True, silent=True) or {}
+    except Exception:
+        body = {}
+
+    token = body.get("token")
+    title = body.get("title")
+    body_text = body.get("body")
+
+    if not all([token, title, body_text]):
+        return jsonify({"error": "token, title, and body are required"}), 400
+
+    response = await apns_sender.send_direct(token, title, body_text)
+    if response:
+        return jsonify({"success": True, "status": response.status})
+    else:
+        return jsonify({"success": False}), 500
+
+
+@https_fn.on_request()
+async def send_broadcast_notification(request: https_fn.Request):
+    """
+    Send a broadcast push notification to all devices.
+    Body (JSON): {"title": "...", "body": "..."}
+    """
+    if not apns_sender:
+        return jsonify({"error": "APNsSender not initialized"}), 500
+    
+    try:
+        body = request.get_json(force=True, silent=True) or {}
+    except Exception:
+        body = {}
+
+    title = body.get("title")
+    body_text = body.get("body")
+
+    if not all([title, body_text]):
+        return jsonify({"error": "title and body are required"}), 400
+
+    db = firestore.client()
+    devices_ref = db.collection("devices")
+    docs = devices_ref.stream()
+    tokens = [doc.to_dict().get("token") for doc in docs]
+    tokens = [token for token in tokens if token]
+
+
+    if not tokens:
+        return jsonify({"error": "No device tokens found"}), 404
+
+    responses = await apns_sender.send_broadcast(tokens, title, body_text)
+    
+    results = []
+    for resp in responses:
+        results.append({
+            "token": resp.device_token,
+            "status": resp.status,
+            "description": resp.description,
+        })
+        
+    return jsonify({"success": True, "results": results})
+
