@@ -12,12 +12,6 @@
 		208063202ECE668700C7B6D7 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 2080631F2ECE668700C7B6D7 /* FirebaseFirestore */; };
 /* End PBXBuildFile section */
 
-/* Begin PBXContainerItemProxy section */
-/* End PBXContainerItemProxy section */
-
-/* Begin PBXCopyFilesBuildPhase section */
-/* End PBXCopyFilesBuildPhase section */
-
 /* Begin PBXFileReference section */
 		2022D3CE2EC23BDB00BA5BB9 /* MathBlitz.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MathBlitz.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */

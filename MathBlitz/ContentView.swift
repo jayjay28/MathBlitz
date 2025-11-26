@@ -21,6 +21,27 @@ struct ContentView: View {
             if let mode = appState.profile?.preferredMode {
                 gameViewModel.updateGameMode(mode)
             }
+            NotificationPermissionManager.shared.requestIfNotDetermined()
+        }
+        .sheet(isPresented: $showingSettings) {
+            if let profile = appState.profile {
+                SettingsView(
+                    profile: profile,
+                    onSave: { updated in
+                        appState.updateProfile(updated)
+                        gameViewModel.updateGameMode(updated.preferredMode)
+                    },
+                    onSignOut: {
+                        appState.signOut()
+                    }
+                )
+            } else {
+                ProgressView("Loading profile…")
+                    .padding()
+            }
+        }
+        .sheet(isPresented: $showingLeaderboard) {
+            LeaderboardView(viewModel: leaderboardViewModel)
         }
         .onChange(of: appState.profile?.preferredMode) { mode in
             if let mode {
@@ -70,36 +91,12 @@ private extension ContentView {
         case .onboarding:
             OnboardingView(onComplete: self.appState.completeOnboarding)
         case .gameplay:
-            ZStack(alignment: .topTrailing) {
-                GameSceneView(
-                    viewModel: gameViewModel,
-                    onSettingsTapped: { showingSettings = true },
-                    onLeaderboardTapped: { showingLeaderboard = true },
-                    onMultiplayerTapped: { self.appState.presentMultiplayerSetup() }
-                )
-                OnlinePresenceBadge(count: self.appState.onlinePlayerCount)
-                    .padding(.top, 16)
-                    .padding(.trailing, 16)
-            }
-            .sheet(isPresented: $showingSettings) {
-                if let profile = self.appState.profile {
-                    SettingsView(profile: profile,
-                                 onSave: { updated in
-                                     self.appState.updateProfile(updated)
-                                     gameViewModel.updateGameMode(updated.preferredMode)
-                                 },
-                                 onSignOut: {
-                                     showingSettings = false
-                                     self.appState.signOut()
-                                 })
-                    .presentationDetents([.medium, .large])
-                } else {
-                    EmptyView()
-                }
-            }
-            .sheet(isPresented: $showingLeaderboard) {
-                LeaderboardView(viewModel: leaderboardViewModel)
-            }
+            HomeView(
+                gameViewModel: gameViewModel,
+                showingSettings: $showingSettings,
+                showingLeaderboard: $showingLeaderboard,
+                appState: appState
+            )
         case let .multiplayerSetup(code):
             MultiplayerSessionSetupView(
                 initialCode: code,

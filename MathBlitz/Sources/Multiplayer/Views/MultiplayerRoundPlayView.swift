@@ -11,24 +11,17 @@ struct MultiplayerRoundPlayView: View {
     var round: MultiplayerRound
     var players: [MultiplayerPlayerState]
     var timeRemaining: Int
+    var roundDuration: TimeInterval
     var winnerId: String?
     var onSubmitAnswer: (Int) -> Void
     var onBack: () -> Void
+
+    @Environment(\.horizontalSizeClass) private var sizeClass
     
     @State private var userAnswer: String = ""
     @State private var phase: BackgroundPhase = .countdown
     @State private var screenShake: CGFloat = 0
     @State private var hasSubmittedThisQuestion = false
-    @State private var numpadShake: CGFloat = 0 // New state for numpad shake
-    @State private var numpadFlash: Bool = false // New state for numpad flash
-    @State private var numpadFrame: CGRect = .zero
-    
-    private let numpadRows = [
-        ["1","2","3"],
-        ["4","5","6"],
-        ["7","8","9"],
-        ["C","0","⌫"]
-    ]
     
     private var isLocked: Bool {
         round.answers.contains { $0.isCorrect }
@@ -37,66 +30,45 @@ struct MultiplayerRoundPlayView: View {
     private var sortedPlayers: [MultiplayerPlayerState] {
         players.sorted { $0.score > $1.score }
     }
+
+    private var isRegularSizeClass: Bool { sizeClass == .regular }
     
     var body: some View {
         GeometryReader { geo in
-            
-            
-            ZStack(alignment: .topLeading) {
+            ZStack(alignment: .top) {
+                LinearGradient(colors: [.purple, .blue], startPoint: .topLeading, endPoint: .bottomTrailing)
+                    .ignoresSafeArea()
+                
                 VStack(spacing: 10) {
-                    // Add safe area padding to ensure content stays below Dynamic Island
                     questionSection(for: geo.size)
                         .padding(.top, max(geo.safeAreaInsets.top, 8))
-                    VStack {
-                        Spacer()
-                        ZStack(alignment: .center) {
-                            // Center the numpad and track its frame
-                            VStack {
-                                HStack{
-                                    countdownClock
-                                    animatedScoreboard
-                                }
-                                numpadView
-                                    .background(
-                                        GeometryReader { numpadGeo in
-                                            Color.clear
-                                                .preference(
-                                                    key: NumpadFramePreferenceKey.self,
-                                                    value: numpadGeo.frame(in: .local)
-                                                )
-                                        }
-                                    )
-                            }
-                            
-                        }
-                        Button(action: onBack) {
-                            Label("Leave", systemImage: "door.left.fill")
-                                .font(.system(size: 15, weight: .semibold, design: .rounded))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 8)
-                                .background(Color.red.opacity(0.9))
-                                .clipShape(Capsule())
-                        }
-                        .padding(.leading, 16)
-                        .padding(.top, geo.safeAreaInsets.top + 8)
+                    HStack {
+                        GameCountdownView(timeRatio: Double(timeRemaining) / roundDuration, seconds: timeRemaining)
+                        animatedScoreboard
                     }
-                    .padding(.bottom, geo.safeAreaInsets.bottom + 24)
+                    .padding(.horizontal, isRegularSizeClass ? 40: 0)
+                    .frame(maxWidth: 400)
+                    
+                    NumpadView(
+                        userAnswer: $userAnswer,
+                        isButtonEnabled: { _ in !isLocked && !hasSubmittedThisQuestion },
+                        onDisabledPress: {
+                            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                            SoundEffectPlayer.shared.playBlocked()
+                        },
+                        onPress: { value in
+                            handleNumpadPress(value: value)
+                        }
+                    )
+                    .frame(maxWidth: 400)
+                    .padding(EdgeInsets(top: 0, leading: 0, bottom: 20, trailing: 0))
                 }
-                .padding(.horizontal, 32)
-                .padding(.vertical, 36)
+                .padding(.horizontal, mainHorizontalPadding)
+                .padding(.bottom, geo.safeAreaInsets.bottom)
                 .frame(width: geo.size.width, height: geo.size.height)
                 .background(animatedBackgroundColor)
                 .offset(x: screenShake)
             }
-            .overlay(alignment: .topTrailing) {
-                AmbientSoundToggleButton()
-                    .padding(.trailing, 24)
-                    .padding(.top, max(geo.safeAreaInsets.top + CGFloat(8), CGFloat(20)))
-            }
-        }
-        .onPreferenceChange(NumpadFramePreferenceKey.self) { frame in
-            numpadFrame = frame
         }
         .onChange(of: round.questionIndex) { _ in
             userAnswer = ""
@@ -108,6 +80,8 @@ struct MultiplayerRoundPlayView: View {
         }
     }
     
+    private var mainHorizontalPadding: CGFloat { isRegularSizeClass ? 80 : 32 }
+
     private var animatedBackgroundColor: Color {
         if timeRemaining <= 10 && timeRemaining > 0 {
             return Color.red.opacity(0.9)
@@ -145,7 +119,7 @@ struct MultiplayerRoundPlayView: View {
         let answerText = userAnswer.isEmpty ? "?" : userAnswer
         
         return VStack(spacing: 16) {
-            Text("\(round.problem.a) × \(round.problem.b) =")
+            Text("\(round.problem.a) × \(round.problem.b)")
                 .font(.bobaland(size: promptSize))
                 .foregroundColor(.white)
                 .minimumScaleFactor(0.7)
@@ -161,61 +135,23 @@ struct MultiplayerRoundPlayView: View {
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 12)
     }
-    
-    private var numpadView: some View {
-        VStack(spacing: 12) {
-            ForEach(numpadRows, id: \.self) { row in
-                HStack {
-                    ForEach(row, id: \.self) { value in
-                        let isDigit = value.allSatisfy { $0.isNumber }
-                        Button {
-                            handleNumpadPress(value: value)
-                        } label: {
-                            Text(value)
-                                .font(isDigit ? .bobaland(size: 44) : .system(size: 28, weight: .bold, design: .rounded))
-                                .frame(width: 80, height: 80)
-                                .background(
-                                    Circle().fill(numpadBackgroundColor)
-                                )
-                                .foregroundColor(.white)
-                                .shadow(radius: 3)
-                        }
-                    }
-                }
-            }
-        }
-        .offset(x: numpadShake) // Apply shake here
-    }
-    
-    private var numpadBackgroundColor: Color {
-        if numpadFlash {
-            return Color.red.opacity(0.8)
-        }
-        if isLocked {
-            return Color.red
-        }
-        if hasSubmittedThisQuestion {
-            return Color.white.opacity(0.15)
-        }
-        return Color.white.opacity(0.25)
-    }
-    
+
     private var animatedScoreboard: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(spacing: 8) {
             ForEach(Array(sortedPlayers.enumerated()), id: \.element.id) { index, player in
                 HStack(spacing: 8) {
-                    Text("#\(index + 1)")
-                        .font(.bobaland(size: 18))
-                        .foregroundColor(player.id == winnerId ? .white : .gray)
-                        .frame(width: 28, alignment: .leading)
+//                    Text("#\(index + 1)")
+//                        .font(.bobaland(size: 18))
+//                        .foregroundColor(player.id == winnerId ? .yellow : .white.opacity(0.7))
+//                        .frame(width: 28, alignment: .leading)
                     Text(player.profile.displayName)
                         .font(.bobaland(size: 18))
-                        .foregroundColor(player.id == winnerId ? .white : .gray)
+                        .foregroundColor(player.id == winnerId ? .yellow : .white.opacity(0.9))
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
                     Text("\(player.score)")
                         .font(.bobaland(size: 24))
-                        .foregroundColor(player.id == winnerId ? .white : .gray)
+                        .foregroundColor(player.id == winnerId ? .yellow : .white)
                 }
             }
         }
@@ -226,67 +162,7 @@ struct MultiplayerRoundPlayView: View {
         sortedPlayers.map { "\($0.id):\($0.score)" }.joined(separator: "|")
     }
     
-    private func numpadCenter(in geometry: GeometryProxy) -> CGPoint {
-        guard numpadFrame != .zero else {
-            // Fallback calculation based on numpad dimensions
-            // Numpad: 4 rows * 80 height + 3 * 12 spacing = 356 height
-            // Width: 3 * 80 = 240
-            let numpadHeight: CGFloat = 356
-            let numpadWidth: CGFloat = 240
-            
-            // Calculate position based on layout
-            // The numpad is in an HStack at the bottom of a VStack
-            // We need to estimate its position
-            let estimatedX = geometry.size.width - 32 - 16 - numpadWidth // padding + spacing
-            let estimatedY = geometry.size.height - 36 - 24 - numpadHeight // padding + bottom safe area
-            
-            return CGPoint(
-                x: estimatedX + numpadWidth / 2,
-                y: estimatedY + numpadHeight / 2
-            )
-        }
-        
-        return CGPoint(
-            x: numpadFrame.midX,
-            y: numpadFrame.midY
-        )
-    }
-    
-    private func scoreboardPositioned(in geometry: GeometryProxy) -> some View {
-        guard numpadFrame != .zero else {
-            // Fallback: position using estimated values
-            let numpadHeight: CGFloat = 356
-            let numpadWidth: CGFloat = 240
-            let estimatedX = geometry.size.width - 32 - 16 - numpadWidth
-            let estimatedY = geometry.size.height - 36 - 24 - numpadHeight
-            let numpadCenterY = estimatedY + numpadHeight / 2
-            
-            return animatedScoreboard
-                .position(
-                    x: estimatedX - 140, // Position to the left of numpad
-                    y: numpadCenterY
-                )
-        }
-        
-        // Position scoreboard to the left of numpad, vertically centered
-        // Convert global coordinates to GeometryReader's coordinate space
-        let globalToLocal = geometry.frame(in: .global)
-        let scoreboardX = numpadFrame.minX - globalToLocal.minX - 16 // 16px spacing to the left
-        let scoreboardY = numpadFrame.midY - globalToLocal.minY // Center vertically with numpad
-        
-        return animatedScoreboard
-            .position(x: scoreboardX, y: scoreboardY)
-    }
-    
     private func handleNumpadPress(value: String) {
-        if isLocked {
-            triggerNumpadBlockedFeedback()
-            return
-        }
-        if hasSubmittedThisQuestion {
-            return
-        }
-        SoundEffectPlayer.shared.playGlassSound()
         if value == "⌫" {
             if !userAnswer.isEmpty {
                 userAnswer.removeLast()
@@ -313,39 +189,14 @@ struct MultiplayerRoundPlayView: View {
         } else {
             phase = .failure
             userAnswer = ""
+            // Add shake for wrong answer
+            let shakeAmount: CGFloat = 8
+            withAnimation(.default) { screenShake = shakeAmount }
+            withAnimation(.default.delay(0.1)) { screenShake = -shakeAmount }
+            withAnimation(.default.delay(0.2)) { screenShake = shakeAmount }
+            withAnimation(.default.delay(0.3)) { screenShake = 0 }
+            SoundEffectPlayer.shared.playBlocked()
         }
-    }
-    
-    private func triggerNumpadBlockedFeedback() {
-        // Shake
-        let shakeAmount: CGFloat = 8
-        withAnimation(.default) { numpadShake = shakeAmount }
-        withAnimation(.default.delay(0.1)) { numpadShake = -shakeAmount }
-        withAnimation(.default.delay(0.2)) { numpadShake = shakeAmount }
-        withAnimation(.default.delay(0.3)) { numpadShake = 0 }
-
-        // // Flash
-        // withAnimation(.easeOut(duration: 0.15)) {
-        //     numpadFlash = true
-        // }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            withAnimation(.easeIn(duration: 0.2)) {
-                numpadFlash = false
-            }
-        }
-        
-        // Haptic feedback for error
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-        SoundEffectPlayer.shared.playBlocked()
-        FlowLogger.trace("Numpad blocked feedback triggered")
-    }
-}
-
-// MARK: - Preference Key
-struct NumpadFramePreferenceKey: PreferenceKey {
-    static var defaultValue: CGRect = .zero
-    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
-        value = nextValue()
     }
 }
 
@@ -393,9 +244,10 @@ struct MultiplayerRoundPlayView_Previews: PreviewProvider {
                     MultiplayerPlayerState.mock(id: "p1", displayName: "Player One", score: 10),
                     MultiplayerPlayerState.mock(id: "p2", displayName: "Player Two", score: 5, isFirstCorrect: true),
                     MultiplayerPlayerState.mock(id: "p3", displayName: "Player Three", score: 3),
-                    MultiplayerPlayerState.mock(id: "p3", displayName: "Player Three", score: 5)
+                    MultiplayerPlayerState.mock(id: "p4", displayName: "Player Four", score: 5)
                 ],
                 timeRemaining: 25,
+                roundDuration: 60,
                 winnerId: "p1",
                 onSubmitAnswer: { _ in },
                 onBack: {}
@@ -410,6 +262,7 @@ struct MultiplayerRoundPlayView_Previews: PreviewProvider {
                     
                 ],
                 timeRemaining: 8, // Test low time remaining
+                roundDuration: 60,
                 onSubmitAnswer: { _ in },
                 onBack: {}
             )
@@ -424,7 +277,8 @@ struct MultiplayerRoundPlayView_Previews: PreviewProvider {
                     MultiplayerPlayerState.mock(id: "p3", displayName: "Player Three", score: 3),
                 ],
                 timeRemaining: 15,
-                winnerId: "p1",
+                roundDuration: 60,
+                winnerId: "p2",
                 onSubmitAnswer: { _ in },
                 onBack: {}
             )

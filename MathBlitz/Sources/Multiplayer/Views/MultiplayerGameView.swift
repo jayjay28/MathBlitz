@@ -54,6 +54,7 @@ struct MultiplayerGameView: View {
                         round: round,
                         players: syncService.game.players,
                         timeRemaining: timeRemainingSeconds(),
+                        roundDuration: roundDuration,
                         winnerId: syncService.game.players.max(by: { $0.score < $1.score })?.id,
                         onSubmitAnswer: { answer in
                             guard let profile = appState.profile else { return }

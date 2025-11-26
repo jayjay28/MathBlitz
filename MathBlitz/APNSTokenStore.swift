@@ -33,11 +33,29 @@ final class APNSTokenStore {
         if let userId {
             payload["userId"] = userId
         }
+        
         do {
+            // Store in devices collection (for backwards compatibility)
             try await db.collection("devices")
                 .document(deviceId)
                 .setData(payload, merge: true)
             FlowLogger.trace("APNS token stored for device \(deviceId)")
+            
+            // Also store in profiles/{userId}/deviceTokens/{deviceId} for cloud function
+            if let userId {
+                let tokenPayload: [String: Any] = [
+                    "token": tokenString,
+                    "bundleId": Bundle.main.bundleIdentifier ?? "unknown",
+                    "platform": "ios",
+                    "lastSeen": FieldValue.serverTimestamp()
+                ]
+                try await db.collection("profiles")
+                    .document(userId)
+                    .collection("deviceTokens")
+                    .document(deviceId)
+                    .setData(tokenPayload, merge: true)
+                FlowLogger.trace("APNS token stored in profiles/\(userId)/deviceTokens/\(deviceId)")
+            }
         } catch {
             FlowLogger.trace("APNS token store failed → \(error.localizedDescription)")
         }

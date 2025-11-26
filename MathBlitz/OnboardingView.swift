@@ -14,6 +14,7 @@ struct OnboardingView: View {
     @State private var name: String = ""
     @State private var mode: GameMode = .kids
     @State private var emojitar: Emojitar = .default
+    @State private var notificationGranted: Bool?
     
     var body: some View {
         VStack(spacing: 28) {
@@ -41,7 +42,8 @@ struct OnboardingView: View {
         case 0: return "Welcome, Puzzle Master!"
         case 1: return "What do friends call you?"
         case 2: return "Choose your challenge"
-        default: return "Pick your vibe 👇"
+        case 3: return "Pick your vibe 👇"
+        default: return "Don’t miss a beat"
         }
     }
     
@@ -96,22 +98,48 @@ struct OnboardingView: View {
                         }
                     }
                 }
-            default:
+            case 3:
                 OnboardingEmojitarView(
                     emojitar: $emojitar,
                     showsEmbeddedSaveButton: false
                 ) { _ in }
+            default:
+                VStack(spacing: 16) {
+                    Text("Turn on notifications so we can cheer when you climb—and nudge you when you’re slipping. Say no and you’ll be finding out the hard way.")
+                        .font(.system(size: 17, weight: .medium, design: .rounded))
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                    
+                    Button(action: requestNotifications) {
+                        Text(notificationGranted == true ? "Notifications On" : "Enable Notifications")
+                            .font(.bobaland(size: 24))
+                            .foregroundColor(.purple)
+                            .padding(.horizontal, 28)
+                            .padding(.vertical, 12)
+                            .background(Color.white)
+                            .clipShape(Capsule())
+                    }
+                    
+                    if let granted = notificationGranted {
+                        Text(granted ? "Nice—stay in the loop." : "Your call. Just don’t blame us when you miss the action.")
+                            .font(.system(size: 14, weight: .medium, design: .rounded))
+                            .foregroundColor(.white.opacity(0.8))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                    }
+                }
             }
         }
         .padding(28)
         .frame(maxWidth: 520)
-        .background(step < 2 ? Color.clear : Color.white.opacity(0.18))
+        .background(step < 3 ? Color.clear : Color.white.opacity(0.18))
         .clipShape(RoundedRectangle(cornerRadius: 36, style: .continuous))
     }
     
     private func advance() {
         FlowLogger.trace("Onboarding advance from step \(step)")
-        if step < 3 {
+        if step < 4 {
             step += 1
             FlowLogger.trace("Onboarding moved to step \(step)")
         } else {
@@ -138,7 +166,7 @@ struct OnboardingView: View {
             
             Spacer()
             
-            if step < 3 {
+            if step < 4 {
                 Button("Next", action: advance)
                     .buttonStyle(PrimaryButtonStyle())
                     .disabled(step == 1 ? name.trimmingCharacters(in: .whitespaces).isEmpty : false)
@@ -148,6 +176,14 @@ struct OnboardingView: View {
             }
         }
         .padding(.horizontal, 36)
+    }
+    
+    private func requestNotifications() {
+        NotificationPermissionManager.shared.requestPermission { granted in
+            DispatchQueue.main.async {
+                notificationGranted = granted
+            }
+        }
     }
 }
 

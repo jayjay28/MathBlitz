@@ -39,9 +39,6 @@ struct MultiplayerRoundPlayView: View {
                     VStack {
                         countdownClock
                         Spacer()
-                        PlayerDock(players: players)
-                            .padding(.horizontal, 16)
-                            .padding(.bottom, 16)
 
                         NumpadView(
                             userAnswer: $userAnswer,

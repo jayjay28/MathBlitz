@@ -3,9 +3,43 @@
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
   },
-  "functions": {
-    "source": "functions",
-    "runtime": "python310",
-    "locations": ["us-central1"]
+  "functions": [
+    {
+      "source": "cloud_functions/broadcast_cloudkit_message",
+      "codebase": "broadcast_cloudkit_message",
+      "runtime": "python310"
+    },
+    {
+      "source": "cloud_functions/notify_high_score_overtake",
+      "codebase": "notify_high_score_overtake",
+      "runtime": "python310"
+    },
+    {
+      "source": "cloud_functions/on_leaderboard_standing_change",
+      "codebase": "on_leaderboard_standing_change",
+      "runtime": "python310"
+    },
+    {
+      "source": "cloud_functions/resolvemultiplayeranswer",
+      "codebase": "resolvemultiplayeranswer",
+      "runtime": "python310"
+    },
+    {
+      "source": "cloud_functions/send_test_leaderboard_push",
+      "codebase": "send_test_leaderboard_push",
+      "runtime": "python310"
+    }
+  ],
+  "emulators": {
+    "firestore": {
+      "port": 8080
+    },
+    "functions": {
+      "port": 5001
+    },
+    "ui": {
+      "enabled": true,
+      "port": 4000
+    }
   }
 }

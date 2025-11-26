@@ -7,3 +7,6 @@ functions/venv/
 
 .gcloud/
 __pycache__/
+*.p8
+functions/.env
+functions/.env.example

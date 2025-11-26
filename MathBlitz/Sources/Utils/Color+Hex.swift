@@ -39,4 +39,27 @@ extension Color {
         return .white
         #endif
     }
+    
+    func mix(with other: Color, by amount: Double) -> Color {
+        #if canImport(UIKit)
+        let selfUIColor = UIColor(self)
+        let otherUIColor = UIColor(other)
+        
+        var r1: CGFloat = 0, g1: CGFloat = 0, b1: CGFloat = 0, a1: CGFloat = 0
+        var r2: CGFloat = 0, g2: CGFloat = 0, b2: CGFloat = 0, a2: CGFloat = 0
+        
+        selfUIColor.getRed(&r1, green: &g1, blue: &b1, alpha: &a1)
+        otherUIColor.getRed(&r2, green: &g2, blue: &b2, alpha: &a2)
+        
+        let clampedAmount = max(0, min(1, amount))
+        let r = r1 + (r2 - r1) * clampedAmount
+        let g = g1 + (g2 - g1) * clampedAmount
+        let b = b1 + (b2 - b1) * clampedAmount
+        let a = a1 + (a2 - a1) * clampedAmount
+        
+        return Color(.sRGB, red: Double(r), green: Double(g), blue: Double(b), opacity: Double(a))
+        #else
+        return self
+        #endif
+    }
 }
