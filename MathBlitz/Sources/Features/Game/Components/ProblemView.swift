@@ -26,7 +26,7 @@ struct ProblemView: View {
     let problem: Problem
     
     var body: some View {
-        Text("\(problem.a) × \(problem.b)")
+        Text("\(problem.a) \(problem.operation.displayText) \(problem.b)")
             .font(.bobaland(size: 86))
             .foregroundColor(.white)
             .allowsTightening(true)
@@ -37,7 +37,7 @@ struct ProblemView: View {
 
 struct ProblemView_Previews: PreviewProvider {
     static var previews: some View {
-        ProblemView(problem: Problem(a: 12, b: 34))
+        ProblemView(problem: Problem(a: 12, b: 34, operation: .multiply))
             .background(Color.blue)
     }
 }

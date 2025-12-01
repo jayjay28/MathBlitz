@@ -48,6 +48,7 @@ class GameViewModel: ObservableObject {
     private let maxLives = 3
     private let modeStorageKey = "MathBlitzGameMode"
     private var shouldShowPlacementToast = false
+    private var problemsGeneratedInCurrentGame: Set<Problem> = []
     
     var gameTimer: Timer?
     private let timerResolution: TimeInterval = 0.05
@@ -165,7 +166,7 @@ var isMultiplayerContext: Bool = false
         timeRemainingSeconds = Int(ceil(currentLevel.gameDuration))
         
         generateProblem()
-        FlowLogger.trace("New round started → problem \(currentProblem.a) × \(currentProblem.b) (level \(currentLevel.levelNumber))")
+        FlowLogger.trace("New round started → problem \(currentProblem.a) \(currentProblem.operation.displayText) \(currentProblem.b) (level \(currentLevel.levelNumber))")
         startCountdown()
     }
     
@@ -236,6 +237,7 @@ var isMultiplayerContext: Bool = false
         triggerHighScoreShake = false
         loadHighScore(for: gameMode)
         userAnswer = ""
+        problemsGeneratedInCurrentGame.removeAll()
         newRound()
         FlowLogger.trace("Game reset → mode \(gameMode.rawValue), high score \(highScore)")
         TestGameStartNotifier.shared.broadcastGameStart(mode: gameMode)
@@ -329,10 +331,34 @@ var isMultiplayerContext: Bool = false
         }
     }
     
+        
     private func generateProblem() {
         let range = currentLevel.numberRange
-        currentProblem = Problem(a: Int.random(in: range), b: Int.random(in: range))
+        let allowedOperations: [OperationType]
+        
+        // Define operations based on game mode or level if needed
+        if gameMode == .kids {
+            // Kids mode can have addition, subtraction, and multiplication
+            allowedOperations = [.add, .subtract, .multiply]
+        } else {
+            // Adult mode can have all operations
+            allowedOperations = [.add, .subtract, .multiply]
+        }
+        
+        var newProblem: Problem
+        // Attempt to generate a unique problem. If problemsGeneratedInCurrentGame contains all possible problems
+        // within the current range and allowedOperations, this loop could become infinite.
+        // The condition `problemsGeneratedInCurrentGame.count < range.count * range.count * allowedOperations.count`
+        // is a basic safeguard. A more robust solution for very small ranges might involve
+        // dynamically adjusting allowedOperations or range, or gracefully handling a "no more unique problems" state.
+        repeat {
+            newProblem = Problem.random(range: range, operations: allowedOperations)
+        } while problemsGeneratedInCurrentGame.contains(newProblem) && problemsGeneratedInCurrentGame.count < range.count * range.count * allowedOperations.count
+        
+        currentProblem = newProblem
+        problemsGeneratedInCurrentGame.insert(newProblem)
     }
+    
     
     private func startCountdown() {
         roundStartTime = Date()
