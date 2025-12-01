@@ -23,7 +23,7 @@ enum BackgroundPhase {
 
 @MainActor
 class GameViewModel: ObservableObject {
-    @Published var currentProblem: Problem = Problem(a: 2, b: 2)
+    @Published var currentProblem: Problem = Problem(a: 2, b: 2, operation: .multiply)
     @Published var userAnswer: String = ""
     @Published var score: Int = 0
     @Published var isGameActive: Bool = true
@@ -355,7 +355,7 @@ var isMultiplayerContext: Bool = false
             newProblem = Problem.random(range: range, operations: allowedOperations)
         } while problemsGeneratedInCurrentGame.contains(newProblem) && problemsGeneratedInCurrentGame.count < range.count * range.count * allowedOperations.count
         
-        currentProblem = newProblem
+        self.currentProblem = newProblem
         problemsGeneratedInCurrentGame.insert(newProblem)
     }
     
