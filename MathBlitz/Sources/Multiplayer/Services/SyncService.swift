@@ -535,7 +535,7 @@ final class MultiplayerSyncService: ObservableObject {
         let problemData = data["problem"] as? [String: Int] ?? [:]
         let problem = Problem(
             a: problemData["a"] ?? 0,
-            b: problemData["b"] ?? 0
+            b: problemData["b"] ?? 0, operation: .add
         )
         let stateRaw = data["state"] as? String ?? MultiplayerRoundState.open.rawValue
         let state = MultiplayerRoundState(rawValue: stateRaw) ?? .open

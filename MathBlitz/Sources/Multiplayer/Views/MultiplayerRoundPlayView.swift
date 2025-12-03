@@ -205,7 +205,7 @@ extension MultiplayerRound {
     static var mock: MultiplayerRound {
         MultiplayerRound(
             id: UUID().uuidString,
-            problem: Problem(a: 7, b: 8),
+            problem: Problem(a: 7, b: 8, operation: .multiply),
             state: .open,
             startedAt: Date(),
             lockedAt: nil,
