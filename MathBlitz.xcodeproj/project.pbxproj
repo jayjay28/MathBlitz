@@ -6,12 +6,6 @@
 	objectVersion = 77;
 	objects = {
 
-/* Begin PBXBuildFile section */
-		2080631C2ECE662F00C7B6D7 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 2080631B2ECE662F00C7B6D7 /* FirebaseAuth */; };
-		2080631E2ECE668700C7B6D7 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 2080631D2ECE668700C7B6D7 /* FirebaseCore */; };
-		208063202ECE668700C7B6D7 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 2080631F2ECE668700C7B6D7 /* FirebaseFirestore */; };
-/* End PBXBuildFile section */
-
 /* Begin PBXFileReference section */
 		2022D3CE2EC23BDB00BA5BB9 /* MathBlitz.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MathBlitz.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -45,9 +39,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2080631E2ECE668700C7B6D7 /* FirebaseCore in Frameworks */,
-				2080631C2ECE662F00C7B6D7 /* FirebaseAuth in Frameworks */,
-				208063202ECE668700C7B6D7 /* FirebaseFirestore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -98,9 +89,6 @@
 			);
 			name = MathBlitz;
 			packageProductDependencies = (
-				2080631B2ECE662F00C7B6D7 /* FirebaseAuth */,
-				2080631D2ECE668700C7B6D7 /* FirebaseCore */,
-				2080631F2ECE668700C7B6D7 /* FirebaseFirestore */,
 			);
 			productName = TurboXTable;
 			productReference = 2022D3CE2EC23BDB00BA5BB9 /* MathBlitz.app */;
@@ -131,7 +119,7 @@
 			mainGroup = 2022D3C52EC23BDB00BA5BB9;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				2080631A2ECE662F00C7B6D7 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				20F00FEE2EE0DB0F00E90876 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 2022D3CF2EC23BDB00BA5BB9 /* Products */;
@@ -299,7 +287,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
-				MARKETING_VERSION = 2;
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = MathBlitz;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -335,7 +323,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
-				MARKETING_VERSION = 2;
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = MathBlitz;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -374,33 +362,15 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		2080631A2ECE662F00C7B6D7 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+		20F00FEE2EE0DB0F00E90876 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 12.6.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		2080631B2ECE662F00C7B6D7 /* FirebaseAuth */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 2080631A2ECE662F00C7B6D7 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseAuth;
-		};
-		2080631D2ECE668700C7B6D7 /* FirebaseCore */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 2080631A2ECE662F00C7B6D7 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseCore;
-		};
-		2080631F2ECE668700C7B6D7 /* FirebaseFirestore */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 2080631A2ECE662F00C7B6D7 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseFirestore;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 2022D3C62EC23BDB00BA5BB9 /* Project object */;
 }
