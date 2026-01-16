@@ -43,7 +43,7 @@ struct MultiplayerRoundPlayView: View {
                     questionSection(for: geo.size)
                         .padding(.top, max(geo.safeAreaInsets.top, 8))
                     HStack {
-                        GameCountdownView(timeRatio: Double(timeRemaining) / roundDuration, seconds: timeRemaining)
+                        GameCountdownView(timeRatio: Double(timeRemaining) / roundDuration, rawTimeRemaining: Double(timeRemaining))
                         animatedScoreboard
                     }
                     .padding(.horizontal, isRegularSizeClass ? 40: 0)

@@ -28,6 +28,11 @@
       "source": "cloud_functions/send_test_leaderboard_push",
       "codebase": "send_test_leaderboard_push",
       "runtime": "python310"
+    },
+    {
+      "source": "cloud_functions/generate_kids_daily_challenges",
+      "codebase": "generate_kids_daily_challenges",
+      "runtime": "python310"
     }
   ],
   "emulators": {

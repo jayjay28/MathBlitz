@@ -85,7 +85,7 @@ struct GameSceneView: View {
                                 }
                             }
                         LivesView(totalLives: viewModel.totalLives, remainingLives: viewModel.remainingLives, heartSize: lifeMeterHeartSize)
-                        GameCountdownView(timeRatio: viewModel.timeRemainingRatio, seconds: viewModel.timeRemainingSeconds)
+                        GameCountdownView(timeRatio: viewModel.timeRemainingRatio, rawTimeRemaining: viewModel.rawTimeRemaining)
                         NumpadView(
                             userAnswer: $viewModel.userAnswer,
                             isButtonEnabled: { _ in viewModel.isGameActive },
@@ -110,7 +110,7 @@ struct GameSceneView: View {
                     PostGameView(score: viewModel.score,
                                  leaderboardEntries: viewModel.leaderboardEntries,
                                  onNewGame: {
-                                     self.presentationMode.wrappedValue.dismiss()
+                                     viewModel.resetGame()
                                  })
                         .transition(.opacity.animation(.easeInOut(duration: 0.5)))
                 }

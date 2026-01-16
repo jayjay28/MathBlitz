@@ -68,5 +68,16 @@ service cloud.firestore {
         }
       }
     }
+
+    match /daily_challenges/{challengeId} {
+      allow read: if isSignedIn();
+    }
+
+    match /daily_challenge_completions/{date} {
+      match /users/{userId} {
+        allow list, read: if isSignedIn();
+        allow write: if isSelf(userId);
+      }
+    }
   }
 }

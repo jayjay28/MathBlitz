@@ -8,17 +8,14 @@
 import Foundation
 import SwiftUI
 import FirebaseAuth
-import FirebaseAuth
+import CoreHaptics // Import CoreHaptics
 
 #if canImport(UIKit)
 import UIKit
 #endif
 
 enum BackgroundPhase {
-    case countdown
-    case success
-    case failure
-    case timeout
+    case countdown, success, failure, timeout
 }
 
 @MainActor
@@ -29,6 +26,7 @@ class GameViewModel: ObservableObject {
     @Published var isGameActive: Bool = true
     @Published var backgroundPhase: BackgroundPhase = .countdown
     @Published var timeRemainingRatio: Double = 1.0
+    @Published var rawTimeRemaining: Double = 0.0 // New variable for millisecond precision
     @Published var timeRemainingSeconds: Int = 0
     @Published var screenShake: CGFloat = 0
     @Published var currentLevelIndex: Int = 0
@@ -51,8 +49,11 @@ class GameViewModel: ObservableObject {
     private var problemsGeneratedInCurrentGame: Set<Problem> = []
     
     var gameTimer: Timer?
+    private var heartbeatTimer: Timer?
     private let timerResolution: TimeInterval = 0.05
     private var roundStartTime: Date = Date()
+    
+    private var hapticEngine: CHHapticEngine?
     
     private let kidsLevels = [
         Level(levelNumber: 1, numberRange: 2...5, gameDuration: 20.0, questionsPerLevel: 5),
@@ -70,88 +71,54 @@ class GameViewModel: ObservableObject {
         Level(levelNumber: 5, numberRange: 10...25, gameDuration: 5.0, questionsPerLevel: 14)
     ]
     
-    var levels: [Level] {
-        gameMode == .kids ? kidsLevels : adultLevels
-    }
-    
-    var currentLevel: Level {
-        levels[min(currentLevelIndex, levels.count - 1)]
-    }
-    
-var totalLives: Int {
-    maxLives
-}
-
-var isMultiplayerContext: Bool = false
+    var levels: [Level] { gameMode == .kids ? kidsLevels : adultLevels }
+    var currentLevel: Level { levels[min(currentLevelIndex, levels.count - 1)] }
+    var totalLives: Int { maxLives }
+    var isMultiplayerContext: Bool = false
     
     init() {
         let storedModeRaw = UserDefaults.standard.string(forKey: modeStorageKey)
         let storedMode = GameMode(rawValue: storedModeRaw ?? "") ?? .kids
         self.gameMode = storedMode
         self.highScore = UserDefaults.standard.integer(forKey: highScoreStorageKey(for: storedMode))
-        FlowLogger.trace("GameViewModel initialized with mode \(storedMode.rawValue) and high score \(highScore)")
+        
+        prepareHeartbeatHaptics()
         
         if Auth.auth().currentUser != nil {
-            Task { [weak self] in
-                FlowLogger.trace("Initial leaderboard fetch kicked off")
-                await self?.fetchLeaderboard()
-            }
-        } else {
-            FlowLogger.trace("Skipping initial leaderboard fetch because no authenticated user is present yet")
+            Task { [weak self] in await self?.fetchLeaderboard() }
         }
     }
     
     func updateGameMode(_ mode: GameMode) {
         guard mode != gameMode else { return }
-        FlowLogger.trace("Updating game mode from \(gameMode.rawValue) to \(mode.rawValue)")
         gameMode = mode
         UserDefaults.standard.set(mode.rawValue, forKey: modeStorageKey)
         loadHighScore(for: mode)
         resetGame()
-        Task { [weak self] in
-            FlowLogger.trace("Fetching leaderboard after mode switch to \(mode.rawValue)")
-            await self?.fetchLeaderboard()
-        }
+        Task { [weak self] in await self?.fetchLeaderboard() }
     }
     
     func fetchLeaderboard() async {
         do {
-            FlowLogger.trace("Fetching leaderboard for mode \(gameMode.rawValue)")
             let entries = try await LeaderboardService.shared.fetchTopEntries(mode: gameMode, limit: 10)
             leaderboardEntries = entries
-            FlowLogger.trace("Leaderboard fetched with \(entries.count) entries for mode \(gameMode.rawValue)")
             updatePlacement(using: entries)
             maybeTriggerPlacementToast()
-        } catch {
-            #if DEBUG
-            print("Failed to load leaderboard: \(error.localizedDescription)")
-            #endif
-            FlowLogger.trace("Leaderboard fetch failed for mode \(gameMode.rawValue)")
-        }
+        } catch { print("Failed to load leaderboard: \(error.localizedDescription)") }
     }
 
     func handleNumpadPress(value: String) {
         guard isGameActive else { return }
-        
-        if value == "⌫" {
-            if !userAnswer.isEmpty {
-                userAnswer.removeLast()
-            }
-        } else if value == "C" {
-            userAnswer = ""
-        } else {
+        if value == "⌫" { if !userAnswer.isEmpty { userAnswer.removeLast() } }
+        else if value == "C" { userAnswer = "" }
+        else {
             userAnswer += value
-            
-            // Add a tiny delay to allow the UI to update and show the typed digit
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
                 guard let self = self, self.isGameActive else { return }
-                
-                if let answerInt = Int(self.userAnswer) {
-                    if answerInt == self.currentProblem.answer {
-                        self.checkAnswer(correct: true)
-                    } else if self.userAnswer.count >= String(self.currentProblem.answer).count {
-                        self.checkAnswer(correct: false)
-                    }
+                if let answerInt = Int(self.userAnswer), answerInt == self.currentProblem.answer {
+                    self.checkAnswer(correct: true)
+                } else if self.userAnswer.count >= String(self.currentProblem.answer).count {
+                    self.checkAnswer(correct: false)
                 }
             }
         }
@@ -159,60 +126,49 @@ var isMultiplayerContext: Bool = false
     
     func newRound() {
         guard !isGameOver else { return }
+        stopTimers()
         isGameActive = true
         userAnswer = ""
         backgroundPhase = .countdown
         timeRemainingRatio = 1.0
+        rawTimeRemaining = currentLevel.gameDuration // Initialize rawTimeRemaining
         timeRemainingSeconds = Int(ceil(currentLevel.gameDuration))
-        
         generateProblem()
-        FlowLogger.trace("New round started → problem \(currentProblem.a) \(currentProblem.operation.displayText) \(currentProblem.b) (level \(currentLevel.levelNumber))")
         startCountdown()
     }
     
     func handleTimesUp() {
         guard isGameActive, backgroundPhase != .timeout else { return }
-        gameTimer?.invalidate()
+        stopTimers()
         isGameActive = false
         backgroundPhase = .timeout
         triggerScreenShake()
         triggerHapticFailure()
         registerMistake()
-        FlowLogger.trace("Round timed out → remaining lives \(remainingLives)")
+        rawTimeRemaining = 0.0 // Ensure rawTimeRemaining is 0
         scheduleNextRound(after: 1.2)
     }
     
     func checkAnswer(correct: Bool) {
         guard isGameActive else { return }
-        gameTimer?.invalidate()
+        stopTimers()
         isGameActive = false
         
         if correct {
-            score += 1
-            
+            score += timeRemainingSeconds
             if score > highScore && highScore > 0 && !didBeatHighScore {
-                didBeatHighScore = true
-                triggerHighScoreShake = true
-                triggerHapticSuccess() // Add haptic feedback here
+                didBeatHighScore = true; triggerHighScoreShake = true
             }
-            
             questionsAnsweredInLevel += 1
             backgroundPhase = .success
-            triggerHapticSuccess()
             triggerSuccessFlash()
-            FlowLogger.trace("Answer correct → score \(score), questions in level \(questionsAnsweredInLevel)/\(currentLevel.questionsPerLevel)")
-            
-            if questionsAnsweredInLevel >= currentLevel.questionsPerLevel {
-                levelUp()
-            }
-            
-            scheduleNextRound(after: 0)
+            if questionsAnsweredInLevel >= currentLevel.questionsPerLevel { levelUp() }
+            scheduleNextRound(after: 0.4)
         } else {
             backgroundPhase = .failure
             triggerScreenShake()
             triggerHapticFailure()
             registerMistake()
-            FlowLogger.trace("Answer incorrect → remaining lives \(remainingLives)")
             scheduleNextRound(after: 0)
         }
     }
@@ -220,52 +176,32 @@ var isMultiplayerContext: Bool = false
     func levelUp() {
         currentLevelIndex = min(currentLevelIndex + 1, levels.count - 1)
         questionsAnsweredInLevel = 0
-        FlowLogger.trace("Level up → now on level \(currentLevel.levelNumber)")
     }
     
     func resetGame() {
-        gameTimer?.invalidate()
-        score = 0
-        currentLevelIndex = 0
-        questionsAnsweredInLevel = 0
-        backgroundPhase = .countdown
-        timeRemainingRatio = 1.0
-        remainingLives = maxLives
-        isGameOver = false
-        showHighScoreCelebration = false
-        didBeatHighScore = false
-        triggerHighScoreShake = false
+        stopTimers()
+        score = 0; currentLevelIndex = 0; questionsAnsweredInLevel = 0
+        backgroundPhase = .countdown; timeRemainingRatio = 1.0
+        remainingLives = maxLives; isGameOver = false
+        showHighScoreCelebration = false; didBeatHighScore = false; triggerHighScoreShake = false
         loadHighScore(for: gameMode)
-        userAnswer = ""
-        problemsGeneratedInCurrentGame.removeAll()
+        userAnswer = ""; problemsGeneratedInCurrentGame.removeAll()
         newRound()
-        FlowLogger.trace("Game reset → mode \(gameMode.rawValue), high score \(highScore)")
         TestGameStartNotifier.shared.broadcastGameStart(mode: gameMode)
     }
     
     func prepareForManualRestart() {
-        gameTimer?.invalidate()
-        score = 0
-        currentLevelIndex = 0
-        questionsAnsweredInLevel = 0
-        backgroundPhase = .countdown
-        timeRemainingRatio = 1.0
-        timeRemainingSeconds = Int(ceil(currentLevel.gameDuration))
-        remainingLives = maxLives
-        showHighScoreCelebration = false
-        didBeatHighScore = false
-        triggerHighScoreShake = false
-        userAnswer = ""
-        isGameActive = false
-        isGameOver = false
-        FlowLogger.trace("Prepared game for manual restart → mode \(gameMode.rawValue)")
+        stopTimers()
+        score = 0; currentLevelIndex = 0; questionsAnsweredInLevel = 0
+        backgroundPhase = .countdown; timeRemainingRatio = 1.0; rawTimeRemaining = currentLevel.gameDuration; timeRemainingSeconds = Int(ceil(currentLevel.gameDuration))
+        remainingLives = maxLives; showHighScoreCelebration = false; didBeatHighScore = false
+        triggerHighScoreShake = false; userAnswer = ""; isGameActive = false; isGameOver = false
     }
     
     func quitGame() {
-        gameTimer?.invalidate()
+        stopTimers()
         isGameActive = false
         isGameOver = true
-        FlowLogger.trace("Game quit by user")
     }
     
     func dismissCelebration() {
@@ -275,97 +211,67 @@ var isMultiplayerContext: Bool = false
     
     func triggerScreenShake() {
         let shakeAmount: CGFloat = 10
-        withAnimation(.default) {
-            screenShake = shakeAmount
-        }
-        withAnimation(.default.delay(0.1)) {
-            screenShake = -shakeAmount
-        }
-        withAnimation(.default.delay(0.2)) {
-            screenShake = shakeAmount
-        }
-        withAnimation(.default.delay(0.3)) {
-            screenShake = 0
-        }
+        withAnimation(.default) { screenShake = shakeAmount }
+        withAnimation(.default.delay(0.1)) { screenShake = -shakeAmount }
+        withAnimation(.default.delay(0.2)) { screenShake = shakeAmount }
+        withAnimation(.default.delay(0.3)) { screenShake = 0 }
     }
     
+    private func stopTimers() {
+        gameTimer?.invalidate()
+        gameTimer = nil
+        stopHeartbeat()
+    }
+    
+    private func stopHeartbeat() {
+        heartbeatTimer?.invalidate()
+        heartbeatTimer = nil
+    }
+
     private func registerMistake() {
         remainingLives = max(0, remainingLives - 1)
-        if remainingLives == 0 {
-            endGame()
-        }
+        if remainingLives == 0 { endGame() }
     }
     
     private func endGame() {
-        gameTimer?.invalidate()
-        isGameActive = false
-        isGameOver = true
+        stopTimers()
+        isGameActive = false; isGameOver = true
         if !isMultiplayerContext {
             updateHighScoreIfNeeded()
             submitScoreToLeaderboard(score)
         }
-        timeRemainingSeconds = 0
-        FlowLogger.trace("Game ended with score \(score)")
+        timeRemainingSeconds = 0; rawTimeRemaining = 0.0
     }
     
     private func updateHighScoreIfNeeded() {
         guard !isMultiplayerContext else { return }
-        guard score > highScore else {
-            didBeatHighScore = false
-            return
-        }
+        guard score > highScore else { didBeatHighScore = false; return }
         highScore = score
         UserDefaults.standard.set(score, forKey: highScoreStorageKey(for: gameMode))
-        showHighScoreCelebration = true
-        didBeatHighScore = true
-        FlowLogger.trace("New high score \(score) saved for mode \(gameMode.rawValue)")
+        showHighScoreCelebration = true; didBeatHighScore = true
     }
     
     private func scheduleNextRound(after delay: TimeInterval) {
-        if delay <= 0 {
-            newRound()
-            return
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
-            self?.newRound()
-        }
+        if delay <= 0 { newRound(); return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in self?.newRound() }
     }
     
-        
     private func generateProblem() {
         let range = currentLevel.numberRange
-        let allowedOperations: [OperationType]
-        
-        // Define operations based on game mode or level if needed
-        if gameMode == .kids {
-            // Kids mode can have addition, subtraction, and multiplication
-            allowedOperations = [.add, .subtract, .multiply]
-        } else {
-            // Adult mode can have all operations
-            allowedOperations = [.add, .subtract, .multiply]
-        }
-        
+        let allowedOperations: [OperationType] = gameMode == .kids ? [.add, .subtract, .multiply] : [.add, .subtract, .multiply]
         var newProblem: Problem
-        // Attempt to generate a unique problem. If problemsGeneratedInCurrentGame contains all possible problems
-        // within the current range and allowedOperations, this loop could become infinite.
-        // The condition `problemsGeneratedInCurrentGame.count < range.count * range.count * allowedOperations.count`
-        // is a basic safeguard. A more robust solution for very small ranges might involve
-        // dynamically adjusting allowedOperations or range, or gracefully handling a "no more unique problems" state.
         repeat {
             newProblem = Problem.random(range: range, operations: allowedOperations)
         } while problemsGeneratedInCurrentGame.contains(newProblem) && problemsGeneratedInCurrentGame.count < range.count * range.count * allowedOperations.count
-        
         self.currentProblem = newProblem
         problemsGeneratedInCurrentGame.insert(newProblem)
     }
     
-    
     private func startCountdown() {
         roundStartTime = Date()
-        gameTimer?.invalidate()
+        stopTimers()
         timeRemainingRatio = 1.0
         timeRemainingSeconds = Int(ceil(currentLevel.gameDuration))
-        
         gameTimer = Timer.scheduledTimer(withTimeInterval: timerResolution, repeats: true) { [weak self] timer in
             self?.handleTimerTick(timer: timer)
         }
@@ -377,49 +283,83 @@ var isMultiplayerContext: Bool = false
         let remaining = duration - elapsed
         
         if remaining <= 0 {
-            timeRemainingRatio = 0
-            timeRemainingSeconds = 0
-            timer.invalidate()
-            gameTimer = nil
-            handleTimesUp()
-            return
+            timeRemainingRatio = 0; timeRemainingSeconds = 0; rawTimeRemaining = 0.0; handleTimesUp(); return
         }
         
-        let ratio = max(0, min(1, remaining / duration))
-        timeRemainingRatio = ratio
+        // Trigger heartbeat haptic when 30% of time is left
+        if remaining <= currentLevel.gameDuration * 0.3 && heartbeatTimer == nil { startHeartbeat() }
+        
+        timeRemainingRatio = max(0, min(1, remaining / duration))
         timeRemainingSeconds = max(0, Int(ceil(remaining)))
+        rawTimeRemaining = remaining
     }
     
-    private func triggerHapticSuccess() {
-#if canImport(UIKit)
-        let generator = UINotificationFeedbackGenerator()
-        generator.notificationOccurred(.success)
-#endif
+    private func prepareHeartbeatHaptics() {
+        guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return }
+        do {
+            hapticEngine = try CHHapticEngine()
+            try hapticEngine?.start()
+            
+            hapticEngine?.stoppedHandler = { reason in
+                print("Haptic engine stopped: \(reason)")
+            }
+            hapticEngine?.resetHandler = { [weak self] in
+                print("Haptic engine reset. Restarting.")
+                do {
+                    try self?.hapticEngine?.start()
+                } catch {
+                    print("Failed to restart the haptic engine: \(error)")
+                }
+            }
+        } catch {
+            print("Error creating or starting haptic engine: \(error.localizedDescription)")
+        }
     }
+    
+
     
     private func triggerHapticFailure() {
-#if canImport(UIKit)
+        #if canImport(UIKit)
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(.error)
-#endif
+        #endif
+    }
+
+    private func startHeartbeat() {
+        guard heartbeatTimer == nil else { return }
+        heartbeatTimer = Timer.scheduledTimer(withTimeInterval: 0.7, repeats: true) { _ in
+            self.playHeartbeatHapticPattern()
+        }
+    }
+    
+    private func playHeartbeatHapticPattern() {
+        guard CHHapticEngine.capabilitiesForHardware().supportsHaptics, let engine = hapticEngine else { return }
+        do {
+            try engine.start() // Idempotent call
+            var events = [CHHapticEvent]()
+            let intensity1 = CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.8)
+            let sharpness1 = CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.4)
+            let event1 = CHHapticEvent(eventType: .hapticTransient, parameters: [intensity1, sharpness1], relativeTime: 0)
+            let intensity2 = CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.6)
+            let sharpness2 = CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.7)
+            let event2 = CHHapticEvent(eventType: .hapticTransient, parameters: [intensity2, sharpness2], relativeTime: 0.18)
+            events.append(contentsOf: [event1, event2])
+            let pattern = try CHHapticPattern(events: events, parameters: [])
+            let player = try engine.makePlayer(with: pattern)
+            try player.start(atTime: 0)
+        } catch {
+            print("Failed to play heartbeat pattern: \(error.localizedDescription)")
+        }
     }
     
     private func submitScoreToLeaderboard(_ finalScore: Int) {
-        guard !isMultiplayerContext else { return }
-        guard finalScore > 0 else { return }
+        guard !isMultiplayerContext, finalScore > 0 else { return }
         let mode = gameMode
-        FlowLogger.trace("Submitting score \(finalScore) to leaderboard for mode \(mode.rawValue)")
         Task { [weak self] in
             do {
                 try await LeaderboardService.shared.submitScore(finalScore, mode: mode)
                 await self?.fetchLeaderboard()
-                FlowLogger.trace("Score \(finalScore) submitted successfully for mode \(mode.rawValue)")
-            } catch {
-#if DEBUG
-                print("Failed to submit leaderboard score: \(error.localizedDescription)")
-#endif
-                FlowLogger.trace("Score submission failed for mode \(mode.rawValue)")
-            }
+            } catch { print("Failed to submit leaderboard score: \(error.localizedDescription)") }
         }
     }
     
@@ -428,7 +368,7 @@ var isMultiplayerContext: Bool = false
     }
     
     private func highScoreStorageKey(for mode: GameMode) -> String {
-        "MathBlitzHighScore_\(mode.rawValue)"
+        return "MathBlitzHighScore_\(mode.rawValue)"
     }
     
     private func triggerSuccessFlash() {
@@ -440,10 +380,7 @@ var isMultiplayerContext: Bool = false
     }
     
     private func updatePlacement(using entries: [LeaderboardEntry]) {
-        guard let currentId = Auth.auth().currentUser?.uid else {
-            latestPlacement = nil
-            return
-        }
+        guard let currentId = Auth.auth().currentUser?.uid else { latestPlacement = nil; return }
         if let index = entries.firstIndex(where: { $0.id == currentId }) {
             latestPlacement = index + 1
         } else {

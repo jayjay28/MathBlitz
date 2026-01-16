@@ -15,6 +15,14 @@
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "toPlayerId", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "daily_challenges",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "date_scheduled", "order": "ASCENDING" },
+        { "fieldPath": "difficulty", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

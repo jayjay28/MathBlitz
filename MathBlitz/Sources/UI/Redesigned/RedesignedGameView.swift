@@ -77,7 +77,7 @@ struct RedesignedGameView: View {
                                     .foregroundColor(isAnswerCorrect == nil ? .white : (isAnswerCorrect == true ? .green : .red))
                                     .frame(maxWidth: .infinity, alignment: .trailing)
                                     .padding()
-                                    .modifier(Shake(animatableData: CGFloat(isShaking ? 1 : 0)))
+//                                    .modifier(Shake(animatableData: CGFloat(isShaking ? 1 : 0)))
                             }
                         }
                         .frame(height: 200)
@@ -208,17 +208,17 @@ struct RedesignedGameView: View {
     }
 }
 
-struct Shake: GeometryEffect {
-    var amount: CGFloat = 10
-    var shakesPerUnit = 3
-    var animatableData: CGFloat
-
-    func effectValue(size: CGSize) -> ProjectionTransform {
-        ProjectionTransform(CGAffineTransform(translationX:
-            amount * sin(animatableData * .pi * CGFloat(shakesPerUnit)),
-            y: 0))
-    }
-}
+//struct Shake: GeometryEffect {
+//    var amount: CGFloat = 10
+//    var shakesPerUnit = 3
+//    var animatableData: CGFloat
+//
+//    func effectValue(size: CGSize) -> ProjectionTransform {
+//        ProjectionTransform(CGAffineTransform(translationX:
+//            amount * sin(animatableData * .pi * CGFloat(shakesPerUnit)),
+//            y: 0))
+//    }
+//}
 
 
 struct CalculatorButtonStyle: ButtonStyle {
